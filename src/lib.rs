@@ -1,3 +1,79 @@
+//! GameShell - A fast and lightweight shell for interactive work in Rust
+//!
+//! GameShell is a little lisp-like command shell made to be embedded in rust programs. It has no
+//! runtime and attempts to call given handlers as fast as possible. This means that GameShell is
+//! made for one-time commands, where the heavy lifting is done in your specified handler
+//! functions. It does not do any JIT/compilation or bytecode conversion, but goes straight to the
+//! handler and calls it.
+//!
+//! # Language #
+//!
+//! The language is just
+//! ```ignore
+//! command argument (subcommand argument ...) (#literal string inside here) argument ...
+//! ```
+//!
+//! If an opened parenthesis is not closed on a newline, the next line is also considered part of
+//! the command:
+//! ```ignore
+//! command (
+//!     subcommand
+//!     argument
+//!     ...
+//! ) argument ...
+//! ```
+//!
+//! # Example #
+//!
+//! This example sets up a basic interpreter and a single handler for a single command. More
+//! commands and handlers can be added.
+//!
+//! ```
+//! use gameshell::{
+//!     decision::Decision, predicates::*, types::Type, Evaluator, GameShell, IncConsumer,
+//! };
+//! use std::str::from_utf8;
+//!
+//! fn main() {
+//!     // This is the input stream, GameShell will handle anything that implements
+//!     // std::io::Read, and will efficiently acquire data from such a stream.
+//!     let read = b"Lorem ipsum 1.23\n";
+//!     // This is the output stream, GameShell will use this to write messages out.
+//!     let mut write = [0u8; 12];
+//!
+//!     // A gameshell is created by supplying a context object (here 0u8), and an IO stream.
+//!     let mut eval = GameShell::new(0u8, &read[..], &mut write[..]);
+//!
+//!     // We then register command handler functions to GameShell, such that it can run commands
+//!     // when reading from the input stream
+//!     //
+//!     // Each command handler takes a `&mut Context` (here u8), and a list of arguments.
+//!     // It returns a result, `Ok` indicating a successful computation,
+//!     // and an `Err` indicating an error, aborting any nested computation and writing out the
+//!     // error message to the writer.
+//!     fn handler(context: &mut u8, args: &[Type]) -> Result<String, String> {
+//!         *context += 1;
+//!         println!["Got types: {:?}", args[0]];
+//!         Ok("Hello world!".into())
+//!     }
+//!
+//!     // Register the handler and associate it with the command "Lorem ipsum <f32>".
+//!     // The first element in the pair is a string literal on which we match the command tree,
+//!     // and the second argument is an arbitrary `Decider` which parses our input data into a
+//!     // `Type`. Deciders can consume as many elements as they like.
+//!     eval.register((&[("Lorem", None), ("ipsum", ANY_F32)], handler)).unwrap();
+//!
+//!     // Run the command loop, keeps reading from the buffer until the buffer has no more
+//!     // elements. When reading from a `TcpStream` this call will block until the stream is
+//!     // closed.
+//!     eval.run(1024);
+//!
+//!     // Ensure that we have run at least once, our starting context was 0, which should now be 1
+//!     assert_eq![1, *eval.context()];
+//!     // Our Ok message has been written to the writer
+//!     assert_eq!["Hello world!", from_utf8(&write[..]).unwrap()];
+//! }
+//! ```
 use crate::{
     decision::Decision,
     incconsumer::{Consumption, Process, Validation},

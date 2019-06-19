@@ -1,5 +1,5 @@
 /// Basic types used internally by the gameshell
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Type {
     Atom(String),
     Bool(bool),

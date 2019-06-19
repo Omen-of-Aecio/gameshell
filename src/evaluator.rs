@@ -8,6 +8,9 @@ use metac::{Data, Evaluate, ParseError};
 /// The virtual machine interprets strings and provides an output. It operates on the strings
 /// according to the specified mapping table, which can be manipulated via [Evaluator::register] and
 /// [Evaluator::register_many].
+///
+/// Builting commands are `autocomplete`, which tries to look ahead by 1 query, and `?` which lists
+/// all possible queries.
 pub struct Evaluator<'a, C> {
     mapping: Mapping<'a, Type, Decision, C>,
     context: C,
@@ -81,6 +84,29 @@ impl<'a, C> Evaluator<'a, C> {
 
 impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
     fn evaluate(&mut self, commands: &[Data]) -> Feedback {
+        fn mapping_to_list<C>(mapping: &'_ Mapping<'_, Type, Decision, C>) -> Vec<String> {
+            let mut builder = vec![];
+            for (key, entry) in mapping.iter() {
+                let (parameter, spacer) = if let Some(decider) = entry.decider() {
+                    (decider.description, " ")
+                } else {
+                    (" ", "")
+                };
+
+                if entry.finalizer().is_some() {
+                    builder.push(
+                        String::from(*key)
+                            + if entry.decider().is_some() { " " } else { "" }
+                            + parameter,
+                    );
+                }
+                for command in mapping_to_list(entry) {
+                    builder.push(String::from(*key) + spacer + parameter + spacer + &command);
+                }
+            }
+            builder
+        }
+
         let content = match self.parse_subcommands(commands) {
             Ok(content) => content,
             Err(err) => return err,
@@ -125,6 +151,11 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
                         return lookerr_to_evalres(err, true);
                     }
                 }
+            }
+            if *front == "?" {
+                let mut list = mapping_to_list(&self.mapping);
+                list.sort();
+                return Feedback::Ok(list.join("\n"));
             }
         }
 
@@ -180,6 +211,29 @@ mod tests {
         assert_eq![
             Feedback::Ok("".into()),
             eval.interpret_single("call").unwrap()
+        ];
+    }
+
+    #[test]
+    fn list_available() {
+        let mut eval = Evaluator::new(0usize);
+
+        fn handler(_context: &mut usize, _args: &[Type]) -> Result<String, String> {
+            Ok("fafa".into())
+        }
+
+        eval.register((&[("call", ANY_F32), ("something", None)], handler))
+            .unwrap();
+        eval.register((&[("call", None), ("abc", MANY_I32)], handler))
+            .unwrap();
+        eval.register((
+            &[("log", None), ("context", MANY_I32), ("level", ANY_ATOM)],
+            handler,
+        ))
+        .unwrap();
+        assert_eq![
+            Feedback::Ok("call <f32> abc <i32> ...\ncall <f32> something \nlog context <i32> ... level <atom>".into()),
+            eval.interpret_single("?").unwrap()
         ];
     }
 
