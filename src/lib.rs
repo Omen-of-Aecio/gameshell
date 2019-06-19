@@ -91,7 +91,8 @@
 //! ```ignore
 //! ?
 //! ```
-//! List all registered commands and their potential arguments.
+//! List all registered commands and their potential arguments. An argument to this command will
+//! regex filter the output: `? lorem`.
 //! and
 //! ```ignore
 //! autocomplete

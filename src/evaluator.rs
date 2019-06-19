@@ -3,6 +3,7 @@ use crate::{decision::Decision, feedback::Feedback, types::Type};
 use cmdmat::{self, LookError, Mapping, RegError, Spec};
 use either::Either;
 use metac::{Data, Evaluate, ParseError};
+use regex::Regex;
 
 /// The virtual machine that runs commands
 ///
@@ -155,6 +156,20 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
             }
             if *front == "?" {
                 let mut list = mapping_to_list(&self.mapping);
+                if let Some(regex) = content_ref.get(1) {
+                    match Regex::new(&(".*".to_string() + &regex + ".*")) {
+                        Ok(regex) => {
+                            let joined = list.join("\n");
+                            list.clear();
+                            for capture in regex.captures_iter(&joined) {
+                                list.push(capture[0].to_string());
+                            }
+                        }
+                        Err(error) => {
+                            return Feedback::Err(format!["Regex could not be compiled: {}", error])
+                        }
+                    }
+                }
                 list.sort();
                 return Feedback::Ok(list.join("\n"));
             }
@@ -235,6 +250,37 @@ mod tests {
         assert_eq![
             Feedback::Ok("call <f32> abc <i32> ...\ncall <f32> something \nlog context <i32> ... level <atom>".into()),
             eval.interpret_single("?").unwrap()
+        ];
+    }
+
+    #[test]
+    fn list_available_using_regex() {
+        let mut eval = Evaluator::new(0usize);
+
+        fn handler(_context: &mut usize, _args: &[Type]) -> Result<String, String> {
+            Ok("fafa".into())
+        }
+
+        eval.register((&[("call", ANY_F32), ("something", None)], handler))
+            .unwrap();
+        eval.register((&[("call", None), ("abc", MANY_I32)], handler))
+            .unwrap();
+        eval.register((
+            &[("log", None), ("context", MANY_I32), ("level", ANY_ATOM)],
+            handler,
+        ))
+        .unwrap();
+        assert_eq![
+            Feedback::Ok("call <f32> abc <i32> ...\ncall <f32> something ".into()),
+            eval.interpret_single("? call").unwrap()
+        ];
+        assert_eq![
+            Feedback::Ok("call <f32> abc <i32> ...".into()),
+            eval.interpret_single("? abc").unwrap()
+        ];
+        assert_eq![
+            Feedback::Err("Regex could not be compiled: regex parse error:\n    .*\\x.*\n        ^\nerror: invalid hexadecimal digit".into()),
+            eval.interpret_single("? \\x").unwrap()
         ];
     }
 
