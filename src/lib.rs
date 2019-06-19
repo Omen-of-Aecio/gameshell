@@ -84,6 +84,21 @@
 //! As unfortunate as that is, this library is not meant to sacrifice usability for speed. If you
 //! want speed, you can just collapse two commands into one and use a single handler, since pure
 //! Rust will always beat this library at speed.
+//!
+//! # Builtin commands #
+//!
+//! GameShell has 2 builtin commands:
+//! ```ignore
+//! ?
+//! ```
+//! List all registered commands and their potential arguments.
+//! and
+//! ```ignore
+//! autocomplete
+//! ```
+//! Autocomplete a query.
+//!
+//! These commands return strings that contain useful information to be displayed to the user.
 #![deny(missing_docs)]
 use crate::{
     decision::Decision,
