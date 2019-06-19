@@ -1,23 +1,22 @@
 use crate::{
     decision::Decision,
-    evaluator::Evaluator,
-    incconsumer::{Consumption, IncConsumer, Process, Validation},
+    incconsumer::{Consumption, Process, Validation},
     types::Type,
 };
+pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
 use cmdmat::{RegError, Spec};
-use feedback::Feedback;
 use metac::{Evaluate, PartialParse, PartialParseOp};
 use std::{
     io::{Read, Write},
     str::from_utf8,
 };
 
-mod decision;
-mod evaluator;
+pub mod decision;
+pub mod evaluator;
 mod feedback;
 mod incconsumer;
 pub mod predicates;
-mod types;
+pub mod types;
 
 pub struct GameShell<'a, C, R: Read, W: Write> {
     evaluator: Evaluator<'a, C>,
@@ -35,6 +34,10 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
             reader,
             writer,
         }
+    }
+
+    pub fn evaluator(&mut self) -> &mut Evaluator<'a, C> {
+        &mut self.evaluator
     }
 
     pub fn context(&self) -> &C {
