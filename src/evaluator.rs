@@ -1,3 +1,4 @@
+//! Core virtual machine used by [GameShell]
 use crate::{decision::Decision, feedback::Feedback, types::Type};
 use cmdmat::{self, LookError, Mapping, RegError, Spec};
 use either::Either;

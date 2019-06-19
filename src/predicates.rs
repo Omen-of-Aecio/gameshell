@@ -5,42 +5,52 @@ use cmdmat::{Decider, Decision as Cecision, SVec};
 
 // ---
 
+/// Decider type alias
 pub type SomeDec = Option<&'static Decider<Type, Decision>>;
 
 // Please keep this list sorted
 
+/// Accepts a single string which does not contain whitespace
 pub const ANY_ATOM: SomeDec = Some(&Decider {
     description: "<atom>",
     decider: any_atom_function,
 });
+/// Accepts a single boolean
 pub const ANY_BOOL: SomeDec = Some(&Decider {
     description: "<true/false>",
     decider: any_bool_function,
 });
+/// Accepts a single f32
 pub const ANY_F32: SomeDec = Some(&Decider {
     description: "<f32>",
     decider: any_f32_function,
 });
+/// Accepts a single string
 pub const ANY_STRING: SomeDec = Some(&Decider {
     description: "<string>",
     decider: any_string_function,
 });
+/// Accepts a single u8
 pub const ANY_U8: SomeDec = Some(&Decider {
     description: "<u8>",
     decider: any_u8_function,
 });
+/// Ignores all arguments
 pub const IGNORE_ALL: SomeDec = Some(&Decider {
     description: "<anything> ...",
     decider: ignore_all_function,
 });
+/// Accepts 1 or more i32s
 pub const MANY_I32: SomeDec = Some(&Decider {
     description: "<i32> ...",
     decider: many_i32_function,
 });
+/// Accepts 1 or more strings
 pub const MANY_STRING: SomeDec = Some(&Decider {
     description: "<string> ...",
     decider: many_string_function,
 });
+/// Accepts two strings
 pub const TWO_STRINGS: SomeDec = Some(&Decider {
     description: "<string> <string>",
     decider: two_string_function,

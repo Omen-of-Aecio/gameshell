@@ -74,6 +74,17 @@
 //!     assert_eq!["Hello world!", from_utf8(&write[..]).unwrap()];
 //! }
 //! ```
+//!
+//! # Why does a command handler return a string instead of a type? #
+//!
+//! Because nested commands may reinterpret the string in any way they like, according to an
+//! arbitrary decider. Thus, we can't return types. This is an inefficiency to allow for proper
+//! error checking in nested calls.
+//!
+//! As unfortunate as that is, this library is not meant to sacrifice usability for speed. If you
+//! want speed, you can just collapse two commands into one and use a single handler, since pure
+//! Rust will always beat this library at speed.
+#![deny(missing_docs)]
 use crate::{
     decision::Decision,
     incconsumer::{Consumption, Process, Validation},
