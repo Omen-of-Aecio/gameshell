@@ -1,0 +1,17 @@
+[package]
+name = "gameshell"
+version = "0.1.0"
+authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cmdmat =      { path = "../cmdmat" }
+metac =       { path = "../metac" }
+either = "1.5.0"
+
+[dev-dependencies]
+crossbeam-channel = "0.3.8"
+quickcheck = "0.8"
+quickcheck_macros = "0.8"
