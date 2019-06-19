@@ -6,14 +6,16 @@ use metac::{Data, Evaluate, ParseError};
 /// The virtual machine that runs commands
 ///
 /// The virtual machine interprets strings and provides an output. It operates on the strings
-/// according to the specified mapping table, which can be manipulated via [register] and
-/// [register_many].
+/// according to the specified mapping table, which can be manipulated via [Evaluator::register] and
+/// [Evaluator::register_many].
 pub struct Evaluator<'a, C> {
     mapping: Mapping<'a, Type, Decision, C>,
     context: C,
 }
 
 impl<'a, C> Evaluator<'a, C> {
+    /// Create a new VM which owns a `context`. The context is used in handler functions and can be
+    /// mutated.
     pub fn new(context: C) -> Self {
         Self {
             mapping: Mapping::default(),
@@ -21,14 +23,17 @@ impl<'a, C> Evaluator<'a, C> {
         }
     }
 
+    /// Get a reference to this machine's context
     pub fn context(&self) -> &C {
         &self.context
     }
 
+    /// Register a handler function for a command
     pub fn register(&mut self, spec: Spec<'_, 'a, Type, Decision, C>) -> Result<(), RegError> {
         self.mapping.register(spec)
     }
 
+    /// Register an array of handler functions for a command, see [Evaluator::register]
     pub fn register_many(
         &mut self,
         spec: &[Spec<'_, 'a, Type, Decision, C>],

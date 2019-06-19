@@ -18,6 +18,9 @@ mod incconsumer;
 pub mod predicates;
 pub mod types;
 
+/// The main virtual machine wrapper for a game shell
+///
+/// This wrapper consumes an input and output stream through which it writes messages.
 pub struct GameShell<'a, C, R: Read, W: Write> {
     evaluator: Evaluator<'a, C>,
     parser: PartialParse,
@@ -36,10 +39,12 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
         }
     }
 
+    /// Get a reference to the current evaluator
     pub fn evaluator(&mut self) -> &mut Evaluator<'a, C> {
         &mut self.evaluator
     }
 
+    /// Get a reference to the current context
     pub fn context(&self) -> &C {
         self.evaluator.context()
     }
