@@ -12,7 +12,9 @@ metac =       { path = "../metac" }
 either = "1.5.0"
 regex = "1.1.7"
 
-[dev-dependencies]
-crossbeam-channel = "0.3.8"
+rand = "0.6"
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
+
+[dev-dependencies]
+crossbeam-channel = "0.3.8"
