@@ -179,3 +179,23 @@ fn aslen(input: &[&str], input_l: usize) -> Result<(), Cecision<Decision>> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[quickcheck_macros::quickcheck]
+    fn basic_quickcheck(input: Vec<String>) {
+        let input = &input.iter().map(|string| &string[..]).collect::<Vec<_>>()[..];
+        let out = &mut SVec::new();
+
+        two_string_function(input, out);
+        many_string_function(input, out);
+        ignore_all_function(input, out);
+        any_u8_function(input, out);
+        any_string_function(input, out);
+        any_f32_function(input, out);
+        any_bool_function(input, out);
+        any_atom_function(input, out);
+    }
+}
