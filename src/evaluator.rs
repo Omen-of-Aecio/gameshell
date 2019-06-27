@@ -82,10 +82,8 @@ impl<'a, C> Evaluator<'a, C> {
         }
         Ok(content)
     }
-}
 
-impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
-    fn evaluate(&mut self, commands: &[Data]) -> Feedback {
+    fn handle_any_builtin_commands(&mut self, content: &[&str]) -> Option<Feedback> {
         fn mapping_to_list<C>(mapping: &'_ Mapping<'_, Type, Decision, C>) -> Vec<String> {
             let mut builder = vec![];
             for (key, entry) in mapping.iter() {
@@ -108,16 +106,9 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
             }
             builder
         }
-
-        let content = match self.parse_subcommands(commands) {
-            Ok(content) => content,
-            Err(err) => return err,
-        };
-        let content_ref = content.iter().map(|s| &s[..]).collect::<Vec<_>>();
-
-        if let Some(front) = content_ref.first() {
+        if let Some(front) = content.first() {
             if *front == "autocomplete" {
-                match self.mapping.partial_lookup(&content_ref[1..]) {
+                match self.mapping.partial_lookup(&content[1..]) {
                     Ok(Either::Left(mapping)) => {
                         let mut col = mapping
                             .get_direct_keys()
@@ -140,23 +131,24 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
                             })
                             .collect::<Vec<_>>();
                         if col.is_empty() {
-                            return Feedback::Ok("No more handlers".into());
+                            return Some(Feedback::Ok("No more handlers".into()));
                         } else {
                             col.sort();
-                            return Feedback::Ok(col.join(", "));
+                            return Some(Feedback::Ok(col.join(", ")));
                         }
                     }
                     Ok(Either::Right(name)) => {
-                        return Feedback::Ok(name.into());
+                        return Some(Feedback::Ok(name.into()));
                     }
                     Err(err) => {
-                        return lookerr_to_evalres(err, true);
+                        return Some(lookerr_to_evalres(err, true));
                     }
                 }
             }
+
             if *front == "?" {
                 let mut list = mapping_to_list(&self.mapping);
-                if let Some(regex) = content_ref.get(1) {
+                if let Some(regex) = content.get(1) {
                     match Regex::new(&(".*".to_string() + &regex + ".*")) {
                         Ok(regex) => {
                             let joined = list.join("\n");
@@ -166,13 +158,31 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
                             }
                         }
                         Err(error) => {
-                            return Feedback::Err(format!["Regex could not be compiled: {}", error])
+                            return Some(Feedback::Err(format![
+                                "Regex could not be compiled: {}",
+                                error
+                            ]));
                         }
                     }
                 }
                 list.sort();
-                return Feedback::Ok(list.join("\n"));
+                return Some(Feedback::Ok(list.join("\n")));
             }
+        }
+        None
+    }
+}
+
+impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
+    fn evaluate(&mut self, commands: &[Data]) -> Feedback {
+        let content = match self.parse_subcommands(commands) {
+            Ok(content) => content,
+            Err(err) => return err,
+        };
+        let content_ref = content.iter().map(|s| &s[..]).collect::<Vec<_>>();
+
+        if let Some(result) = self.handle_any_builtin_commands(&content_ref[..]) {
+            return result;
         }
 
         let res = self.mapping.lookup(&content_ref[..]);
