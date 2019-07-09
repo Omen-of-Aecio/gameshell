@@ -107,7 +107,8 @@ use crate::{
     types::Type,
 };
 pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
-use cmdmat::{RegError, Spec};
+use cmdmat::RegError;
+pub use cmdmat::Spec;
 use metac::{Evaluate, PartialParse, PartialParseOp};
 use std::{
     io::{Read, Write},
