@@ -109,7 +109,7 @@ use crate::{
 pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
 use cmdmat::RegError;
 pub use cmdmat::Spec;
-use metac::{Evaluate, PartialParse, PartialParseOp};
+pub use metac::{Evaluate, PartialParse, PartialParseOp};
 use std::{
     io::{Read, Write},
     str::from_utf8,

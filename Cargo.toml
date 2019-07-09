@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 cmdmat = { path = "crates/cmdmat" }
 either = "1.5.0"
-metac = { path = "../metac" }
+metac = { path = "crates/metac" }
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
 rand = "0.6"
