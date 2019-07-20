@@ -25,6 +25,11 @@ pub const ANY_F32: SomeDec = Some(&Decider {
     description: "<f32>",
     decider: any_f32_function,
 });
+/// Accepts a single i32
+pub const ANY_I32: SomeDec = Some(&Decider {
+    description: "<i32>",
+    decider: any_i32_function,
+});
 /// Accepts a single string
 pub const ANY_STRING: SomeDec = Some(&Decider {
     description: "<string>",
@@ -100,6 +105,19 @@ fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
 fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
     ret_if_err![aslen(input, 1)];
     match input[0].parse::<f32>().ok().map(Type::F32) {
+        Some(num) => {
+            out.push(num);
+        }
+        None => {
+            return Cecision::Deny(Decision::Err(input[0].into()));
+        }
+    }
+    Cecision::Accept(1)
+}
+
+fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+    ret_if_err![aslen(input, 1)];
+    match input[0].parse::<i32>().ok().map(Type::I32) {
         Some(num) => {
             out.push(num);
         }
