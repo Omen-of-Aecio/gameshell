@@ -16,3 +16,14 @@ impl Default for Feedback {
         Feedback::Ok(String::default())
     }
 }
+
+impl Feedback {
+    /// Moves the value `v` out of the `Feedback` if it is `Ok(v)`.
+    pub fn unwrap(self) -> String {
+        match self {
+            Feedback::Err(_) => panic!["called `Feedback::unwrap()` on a `Err(String)` value"],
+            Feedback::Help(_) => panic!["called `Feedback::unwrap()` on a `Help(String)` value"],
+            Feedback::Ok(string) => string,
+        }
+    }
+}
