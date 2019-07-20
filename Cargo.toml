@@ -16,4 +16,9 @@ rand = "0.6"
 regex = "1.1.7"
 
 [dev-dependencies]
+criterion = "0.2"
 crossbeam-channel = "0.3.8"
+
+[[bench]]
+name = "basic"
+harness = false
