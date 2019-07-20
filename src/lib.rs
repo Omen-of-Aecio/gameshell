@@ -153,6 +153,11 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
         self.evaluator.context()
     }
 
+    /// Get a mutable reference to the current context
+    pub fn context_mut(&mut self) -> &mut C {
+        self.evaluator.context_mut()
+    }
+
     /// Register a command specificator to this gameshell instance
     pub fn register(&mut self, spec: Spec<'_, 'a, Type, Decision, C>) -> Result<(), RegError> {
         self.evaluator.register(spec)
@@ -247,7 +252,9 @@ mod tests {
     fn rampage() {
         let read = b"Lorem ipsum";
         let mut write = [0u8; 10];
-        GameShell::new(0u8, &read[..], &mut write[..]);
+        let mut shell = GameShell::new(0u8, &read[..], &mut write[..]);
+
+        assert_eq![&mut 0u8, shell.context_mut()];
     }
 
     #[test]

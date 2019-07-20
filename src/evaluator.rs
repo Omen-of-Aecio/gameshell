@@ -33,6 +33,11 @@ impl<'a, C> Evaluator<'a, C> {
         &self.context
     }
 
+    /// Get a mutable reference to this machine's context
+    pub fn context_mut(&mut self) -> &mut C {
+        &mut self.context
+    }
+
     /// Register a handler function for a command
     pub fn register(&mut self, spec: Spec<'_, 'a, Type, Decision, C>) -> Result<(), RegError> {
         self.mapping.register(spec)
