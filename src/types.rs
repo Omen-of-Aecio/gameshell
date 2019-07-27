@@ -20,6 +20,7 @@ pub enum Type {
     U8(u8),
 }
 
+#[cfg(any(test, feature = "with-quickcheck"))]
 impl quickcheck::Arbitrary for Type {
     fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
         use rand::Rng;
