@@ -15,6 +15,11 @@ pub const ANY_ATOM: SomeDec = Some(&Decider {
     description: "<atom>",
     decider: any_atom_function,
 });
+/// Accepts any base64 string
+pub const ANY_BASE64: SomeDec = Some(&Decider {
+    description: "<base64>",
+    decider: any_base64_function,
+});
 /// Accepts a single boolean
 pub const ANY_BOOL: SomeDec = Some(&Decider {
     description: "<true/false>",
@@ -87,6 +92,17 @@ fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
     }
     out.push(Type::Atom(input[0].to_string()));
     Cecision::Accept(1)
+}
+
+fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+    ret_if_err![aslen(input, 1)];
+    match base64::decode(input[0]) {
+        Ok(base64) => {
+            out.push(Type::Raw(base64));
+            Cecision::Accept(1)
+        }
+        Err(err) => Cecision::Deny(Decision::Err(format!["{}", err])),
+    }
 }
 
 fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
@@ -207,13 +223,14 @@ mod tests {
         let input = &input.iter().map(|string| &string[..]).collect::<Vec<_>>()[..];
         let out = &mut SVec::new();
 
-        two_string_function(input, out);
-        many_string_function(input, out);
-        ignore_all_function(input, out);
-        any_u8_function(input, out);
-        any_string_function(input, out);
-        any_f32_function(input, out);
-        any_bool_function(input, out);
         any_atom_function(input, out);
+        any_base64_function(input, out);
+        any_bool_function(input, out);
+        any_f32_function(input, out);
+        any_string_function(input, out);
+        any_u8_function(input, out);
+        ignore_all_function(input, out);
+        many_string_function(input, out);
+        two_string_function(input, out);
     }
 }

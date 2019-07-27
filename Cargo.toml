@@ -5,6 +5,7 @@ authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+base64 = "0.10"
 cmdmat = { path = "crates/cmdmat" }
 either = "1.5.0"
 metac = { path = "crates/metac" }

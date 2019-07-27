@@ -346,4 +346,27 @@ mod tests {
 
         assert_eq![3.14159, rx.recv().unwrap()]
     }
+
+    #[test]
+    fn base64_decoding_into_raw() {
+        let (tx, rx) = bounded(1);
+
+        let mut eval = Evaluator::new(tx);
+
+        fn handler(context: &mut Sender<Vec<u8>>, args: &[Type]) -> Result<String, String> {
+            match args[0] {
+                Type::Raw(ref bytes) => context.send(bytes.clone()).unwrap(),
+                _ => panic!["Input not raw bytes"],
+            }
+            Ok("".into())
+        }
+
+        eval.register((&[("call", ANY_BASE64)], handler)).unwrap();
+
+        eval.interpret_single("call iVBORw0KGgo").unwrap().unwrap();
+
+        // PNG magic number
+        static PNG_MAGIC_NUMBER: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+        assert_eq![PNG_MAGIC_NUMBER, &rx.recv().unwrap()[..]]
+    }
 }
