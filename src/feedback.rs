@@ -1,5 +1,6 @@
 //! Feedback type for informing gameshell about what action to take
 /// Feedback type for informing gameshell about what action to take
+#[must_use]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Feedback {
     /// Inform gameshell that this action errored, causing gameshell to abort a nested call and
@@ -21,8 +22,14 @@ impl Feedback {
     /// Moves the value `v` out of the `Feedback` if it is `Ok(v)`.
     pub fn unwrap(self) -> String {
         match self {
-            Feedback::Err(_) => panic!["called `Feedback::unwrap()` on a `Err(String)` value"],
-            Feedback::Help(_) => panic!["called `Feedback::unwrap()` on a `Help(String)` value"],
+            Feedback::Err(err) => panic![
+                "called `Feedback::unwrap()` on a `Err(String)` value, error={}",
+                err
+            ],
+            Feedback::Help(help) => panic![
+                "called `Feedback::unwrap()` on a `Help(String)` value, help={}",
+                help
+            ],
             Feedback::Ok(string) => string,
         }
     }

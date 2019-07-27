@@ -342,7 +342,7 @@ mod tests {
 
         eval.register((&[("call", ANY_F32)], handler)).unwrap();
 
-        eval.interpret_single("call 3.14159").unwrap();
+        eval.interpret_single("call 3.14159").unwrap().unwrap();
 
         assert_eq![3.14159, rx.recv().unwrap()]
     }
