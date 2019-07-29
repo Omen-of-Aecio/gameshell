@@ -68,23 +68,8 @@ pub const TWO_STRINGS: SomeDec = Some(&Decider {
 
 // ---
 
-// TODO: Replace usage of this macro with `?'
-macro_rules! ret_if_err {
-    ($e:expr) => {{
-        let res = $e;
-        match res {
-            Ok(x) => x,
-            Err(res) => {
-                return res;
-            }
-        }
-    }};
-}
-
-// ---
-
 fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     for i in input[0].chars() {
         if i.is_whitespace() {
             return Cecision::Deny(Decision::Err(input[0].into()));
@@ -95,7 +80,7 @@ fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
 }
 
 fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     match base64::decode(input[0]) {
         Ok(base64) => {
             out.push(Type::Raw(base64));
@@ -106,7 +91,7 @@ fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decisio
 }
 
 fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     match input[0].parse::<bool>().ok().map(Type::Bool) {
         Some(num) => {
             out.push(num);
@@ -119,7 +104,7 @@ fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
 }
 
 fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     match input[0].parse::<f32>().ok().map(Type::F32) {
         Some(num) => {
             out.push(num);
@@ -132,7 +117,7 @@ fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> 
 }
 
 fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     match input[0].parse::<i32>().ok().map(Type::I32) {
         Some(num) => {
             out.push(num);
@@ -145,13 +130,13 @@ fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> 
 }
 
 fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     out.push(Type::String(input[0].to_string()));
     Cecision::Accept(1)
 }
 
 fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, 1)];
+    aslen(input, 1)?;
     match input[0].parse::<u8>().ok().map(Type::U8) {
         Some(num) => {
             out.push(num);
@@ -171,7 +156,7 @@ fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
     let mut cnt = 0;
     for i in input.iter() {
         if let Some(num) = i.parse::<i32>().ok().map(Type::I32) {
-            ret_if_err![aslen(input, cnt + 1)];
+            aslen(input, cnt + 1)?;
             out.push(num);
             cnt += 1;
         } else {
@@ -182,7 +167,7 @@ fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
 }
 
 fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
-    ret_if_err![aslen(input, input.len())];
+    aslen(input, input.len())?;
     let mut cnt = 0;
     for (idx, i) in input.iter().enumerate() {
         out.push(Type::String((*i).into()));
@@ -195,7 +180,7 @@ fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decisio
     if input.len() == 1 {
         return Cecision::Deny(Decision::Help("<string>".into()));
     }
-    ret_if_err![aslen(input, 2)];
+    aslen(input, 2)?;
     out.push(Type::String(input[0].to_string()));
     out.push(Type::String(input[1].to_string()));
     Cecision::Accept(2)
@@ -203,12 +188,9 @@ fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decisio
 
 // ---
 
-fn aslen(input: &[&str], input_l: usize) -> Result<(), Cecision<Decision>> {
+fn aslen(input: &[&str], input_l: usize) -> Result<(), Decision> {
     if input.len() < input_l {
-        Err(Cecision::Deny(Decision::Err(format![
-            "Too few elements: {:?}",
-            input
-        ])))
+        Err(Decision::Err(format!["Too few elements: {:?}", input]))
     } else {
         Ok(())
     }

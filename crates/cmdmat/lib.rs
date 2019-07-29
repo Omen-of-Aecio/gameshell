@@ -174,12 +174,12 @@
 //!     assert![finalizer.is_some()];
 //! }
 //! ```
-#![feature(test)]
+#![feature(test, try_trait)]
 extern crate test;
 
 use either::Either;
 use smallvec::SmallVec;
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Try};
 
 // ---
 
@@ -210,6 +210,23 @@ pub type MapOrDesc<'a, 'b, A, D, C> = Either<&'b Mapping<'a, A, D, C>, &'a str>;
 pub enum Decision<D> {
     Accept(usize),
     Deny(D),
+}
+
+impl<D> Try for Decision<D> {
+    type Ok = usize;
+    type Error = D;
+    fn into_result(self) -> Result<Self::Ok, Self::Error> {
+        match self {
+            Decision::Accept(value) => Ok(value),
+            Decision::Deny(value) => Err(value),
+        }
+    }
+    fn from_error(v: Self::Error) -> Self {
+        Decision::Deny(v)
+    }
+    fn from_ok(v: Self::Ok) -> Self {
+        Decision::Accept(v)
+    }
 }
 
 /// A decider is a function taking in a sequence of tokens and an output array
