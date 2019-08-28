@@ -249,7 +249,7 @@ mod tests {
     use crate::predicates::*;
 
     #[test]
-    fn rampage() {
+    fn basic_case() {
         let read = b"Lorem ipsum";
         let mut write = [0u8; 10];
         let mut shell = GameShell::new(0u8, &read[..], &mut write[..]);
