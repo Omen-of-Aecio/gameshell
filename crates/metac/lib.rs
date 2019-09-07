@@ -263,33 +263,33 @@ fn parse<'a>(line: &'a str, output: &mut SVec<Data<'a>>) -> Result<(), ParseErro
         if lparen_stack > 0 {
             if ch == '(' {
                 lparen_stack += 1;
-                stop += ch.len_utf8();;
+                stop += ch.len_utf8();
             } else if ch == ')' {
                 lparen_stack -= 1;
                 if lparen_stack == 0 {
                     output.push(Data::Command(&line[start..stop]));
-                    stop += ch.len_utf8();;
+                    stop += ch.len_utf8();
                     start = stop;
                 } else {
-                    stop += ch.len_utf8();;
+                    stop += ch.len_utf8();
                 }
             } else {
-                stop += ch.len_utf8();;
+                stop += ch.len_utf8();
             }
         } else if ch.is_whitespace() {
             if start != stop {
                 output.push(Data::Atom(&line[start..stop]));
             }
-            stop += ch.len_utf8();;
+            stop += ch.len_utf8();
             start = stop;
         } else if ch == '(' {
             lparen_stack += 1;
-            stop += ch.len_utf8();;
+            stop += ch.len_utf8();
             start = stop;
         } else if ch == ')' {
             return Err(ParseError::PrematureRightParenthesis);
         } else {
-            stop += ch.len_utf8();;
+            stop += ch.len_utf8();
         }
     }
     if lparen_stack > 0 {
