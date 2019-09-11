@@ -63,10 +63,12 @@
 //!     // `Type`. Deciders can consume as many elements as they like.
 //!     eval.register((&[("Lorem", None), ("ipsum", ANY_F32)], handler)).unwrap();
 //!
-//!     // Run the command loop, keeps reading from the buffer until the buffer has no more
+//!     // Run the command loop, keeps reading from the tcp buffer until the buffer has no more
 //!     // elements. When reading from a `TcpStream` this call will block until the stream is
-//!     // closed.
-//!     eval.run(1024);
+//!     // closed. The `buffer` provided here is the buffer for parsing a single incoming whole
+//!     // command. If the command exceeds this size, the command will be discarded.
+//!     let buffer = &mut [0u8; 1024];
+//!     eval.run(buffer);
 //!
 //!     // Ensure that we have run at least once, our starting context was 0, which should now be 1
 //!     assert_eq![1, *eval.context()];
@@ -271,8 +273,53 @@ mod tests {
 
         eval.register((&[("call", ANY_F32)], handler)).unwrap();
 
-        eval.run(1024);
+        let buffer = &mut [0u8; 1024];
+        eval.run(buffer);
 
         assert_eq![1, *eval.context()];
+    }
+
+    #[test]
+    fn discard_stream_first_command_too_big() {
+        let read = b"call 1.2\ncall 3.1\ncall 99.9999\ncall 1.0";
+        let mut write = [0u8; 1024];
+
+        let mut eval = GameShell::new(0u8, &read[..], &mut write[..]);
+
+        fn handler(context: &mut u8, _args: &[Type]) -> Result<String, String> {
+            *context += 1;
+            Ok("".into())
+        }
+
+        eval.register((&[("call", ANY_F32)], handler)).unwrap();
+
+        let buffer = &mut [0u8; 10];
+        eval.run(buffer);
+
+        assert_eq![2, *eval.context()];
+    }
+
+    #[test]
+    fn partial_read_succeeds() {
+        let read = b"call 1.2\nrock 3.1\n";
+        let mut write = [0u8; 1024];
+
+        let mut eval = GameShell::new(0f32, &read[..], &mut write[..]);
+
+        fn handler(context: &mut f32, args: &[Type]) -> Result<String, String> {
+            match args[0] {
+                Type::F32(number) => *context += number,
+                _ => panic![],
+            }
+            Ok("".into())
+        }
+
+        eval.register((&[("call", ANY_F32)], handler)).unwrap();
+        eval.register((&[("rock", ANY_F32)], handler)).unwrap();
+
+        let buffer = &mut [0u8; 12];
+        eval.run(buffer);
+
+        assert_eq![4.3, *eval.context()];
     }
 }

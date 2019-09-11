@@ -12,6 +12,7 @@
 //! If the input has been approved, we call `process` with the slice of the approved bytes.
 
 /// Describe how many bytes are consumed. Stop will stop the consumption of bytes.
+#[derive(Debug)]
 pub enum Consumption {
     /// Indicate that we have written `usize` bytes to the buffer
     Consumed(usize),
@@ -20,6 +21,7 @@ pub enum Consumption {
 }
 
 /// Indication of the validity of the current accumulation buffer
+#[derive(Debug)]
 pub enum Validation {
     /// Returning this value causes `process` to run with the accumulated buffer. The buffer is
     /// reset after `process` has run
@@ -33,6 +35,7 @@ pub enum Validation {
 }
 
 /// Indicate whether to continue or stop the system
+#[derive(Debug)]
 pub enum Process {
     /// Continue processing bytes
     Continue,
@@ -62,11 +65,15 @@ pub trait IncConsumer {
     fn process(&mut self, input: &[u8]) -> Process;
 
     /// Runs the incremental consumer until it is signalled to quit
-    fn run(&mut self, bufsize: usize) {
-        let mut buf = vec![b'\0'; bufsize];
+    fn run(&mut self, buf: &mut [u8]) {
         let mut begin = 0;
         let mut shift = 0;
         loop {
+            for idx in shift..begin {
+                buf[idx - shift] = buf[idx];
+            }
+            begin -= shift;
+            shift = 0;
             match self.consume(&mut buf[begin..]) {
                 Consumption::Consumed(amount) => {
                     for ch in buf[begin..(begin + amount)].iter() {
@@ -120,7 +127,8 @@ mod tests {
         }
 
         let mut consumed = Consumer::default();
-        consumed.run(0);
+        let buffer = &mut [0u8; 0];
+        consumed.run(buffer);
 
         assert_eq![1, consumed.consumption_count];
         assert_eq![0, consumed.validation_count];
@@ -152,7 +160,8 @@ mod tests {
         }
 
         let mut consumed = Consumer::default();
-        consumed.run(1);
+        let buffer = &mut [0u8; 1];
+        consumed.run(buffer);
 
         assert_eq![1, consumed.consumption_count];
         assert_eq![1, consumed.validation_count];
@@ -193,6 +202,7 @@ mod tests {
             bytes: bytes as usize,
             seen: 0,
         };
-        consumed.run(bytes as usize);
+        let mut buffer = vec![0u8; bytes as usize];
+        consumed.run(&mut buffer);
     }
 }

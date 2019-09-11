@@ -28,7 +28,8 @@ fn initialize_gameshell() {
     eval.register((&[("call", pred::ANY_F32)], handler))
         .unwrap();
 
-    eval.run(1024);
+    let buffer = &mut [0u8; 1024];
+    eval.run(buffer);
 
     assert_eq![1, *eval.context()];
 }
