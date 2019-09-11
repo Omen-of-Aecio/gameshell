@@ -176,6 +176,12 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
 
 impl<'a, C, R: Read, W: Write> IncConsumer for GameShell<'a, C, R, W> {
     fn consume(&mut self, output: &mut [u8]) -> Consumption {
+        if output.is_empty() {
+            let _ = self
+                .writer
+                .write(b"Input too big for buffer, terminating instance");
+            return Consumption::Stop;
+        }
         match self.reader.read(output) {
             Ok(0) => Consumption::Stop,
             Ok(count) => Consumption::Consumed(count),
@@ -297,6 +303,10 @@ mod tests {
         eval.run(buffer);
 
         assert_eq![2, *eval.context()];
+        assert_eq![
+            "Input too big for buffer, terminating instance",
+            std::str::from_utf8(&write[4..50]).unwrap()
+        ];
     }
 
     #[test]
