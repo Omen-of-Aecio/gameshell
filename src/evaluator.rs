@@ -1,5 +1,5 @@
 //! Core virtual machine used by [GameShell]
-use crate::{decision::Decision, feedback::Feedback, types::Type};
+use crate::{feedback::Feedback, types::Type};
 use cmdmat::{self, LookError, Mapping, RegError, Spec};
 use either::Either;
 use metac::{Data, Evaluate, ParseError};
@@ -14,7 +14,7 @@ use regex::Regex;
 /// Builting commands are `autocomplete`, which tries to look ahead by 1 query, and `?` which lists
 /// all possible queries.
 pub struct Evaluator<'a, C> {
-    mapping: Mapping<'a, Type, Decision, C>,
+    mapping: Mapping<'a, Type, String, C>,
     context: C,
 }
 
@@ -39,14 +39,14 @@ impl<'a, C> Evaluator<'a, C> {
     }
 
     /// Register a handler function for a command
-    pub fn register(&mut self, spec: Spec<'_, 'a, Type, Decision, C>) -> Result<(), RegError> {
+    pub fn register(&mut self, spec: Spec<'_, 'a, Type, String, C>) -> Result<(), RegError> {
         self.mapping.register(spec)
     }
 
     /// Register an array of handler functions for a command, see [Evaluator::register]
     pub fn register_many(
         &mut self,
-        spec: &[Spec<'_, 'a, Type, Decision, C>],
+        spec: &[Spec<'_, 'a, Type, String, C>],
     ) -> Result<(), RegError> {
         self.mapping.register_many(spec)
     }
@@ -89,7 +89,7 @@ impl<'a, C> Evaluator<'a, C> {
     }
 
     fn handle_any_builtin_commands(&mut self, content: &[&str]) -> Option<Feedback> {
-        fn mapping_to_list<C>(mapping: &'_ Mapping<'_, Type, Decision, C>) -> Vec<String> {
+        fn mapping_to_list<C>(mapping: &'_ Mapping<'_, Type, String, C>) -> Vec<String> {
             let mut builder = vec![];
             for (key, entry) in mapping.iter() {
                 let (parameter, spacer) = if let Some(decider) = entry.decider() {
@@ -146,7 +146,7 @@ impl<'a, C> Evaluator<'a, C> {
                         return Some(Feedback::Ok(name.into()));
                     }
                     Err(err) => {
-                        return Some(lookerr_to_evalres(err, true));
+                        return Some(lookerr_to_evalres(err));
                     }
                 }
             }
@@ -199,23 +199,16 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
                     Err(res) => Feedback::Err(res),
                 }
             }
-            Err(err) => lookerr_to_evalres(err, false),
+            Err(err) => lookerr_to_evalres(err),
         }
     }
 }
 
-fn lookerr_to_evalres(err: LookError<Decision>, allow_help: bool) -> Feedback {
+fn lookerr_to_evalres(err: LookError<String>) -> Feedback {
     match err {
         LookError::DeciderAdvancedTooFar => Feedback::Err("Decider advanced too far".into()),
-        LookError::DeciderDenied(desc, Decision::Err(decider)) => {
-            Feedback::Err(format!["Expected {} but got: {}", desc, decider])
-        }
-        LookError::DeciderDenied(desc, Decision::Help(help)) => {
-            if allow_help {
-                Feedback::Help(help)
-            } else {
-                Feedback::Err(format!["Expected {} but got denied: {}", desc, help])
-            }
+        LookError::DeciderDenied(desc, decider) => {
+            Feedback::Err(format!["Expected {}. Decider: {}", desc, decider])
         }
         LookError::FinalizerDoesNotExist => Feedback::Err("Finalizer does not exist".into()),
         LookError::UnknownMapping(token) => {
@@ -309,7 +302,9 @@ mod tests {
 
         eval.register((&[("call", ANY_F32)], handler)).unwrap();
         assert_eq![
-            Feedback::Err("Expected <f32> but got: Too few elements: []".into()),
+            Feedback::Err(
+                "Expected <f32>. Decider: Too few elements: [], length: 0, expected: 1".into()
+            ),
             eval.interpret_single("call").unwrap()
         ];
         assert_eq![
@@ -321,7 +316,7 @@ mod tests {
             eval.interpret_single("call 3").unwrap()
         ];
         assert_eq![
-            Feedback::Err("Expected <f32> but got: alpha".into()),
+            Feedback::Err("Expected <f32>. Decider: got string: alpha".into()),
             eval.interpret_single("call alpha").unwrap()
         ];
     }

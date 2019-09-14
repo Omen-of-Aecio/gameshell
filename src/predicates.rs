@@ -1,12 +1,12 @@
 //! Contains pre-built predicates for use outside this library for creating command
 //! specifications.
-use crate::{decision::Decision, types::Type};
+use crate::types::Type;
 use cmdmat::{Decider, Decision as Cecision, SVec};
 
 // ---
 
 /// Decider type alias
-pub type SomeDec = Option<&'static Decider<Type, Decision>>;
+pub type SomeDec = Option<&'static Decider<Type, String>>;
 
 // Please keep this list sorted
 
@@ -68,91 +68,91 @@ pub const TWO_STRINGS: SomeDec = Some(&Decider {
 
 // ---
 
-fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     for i in input[0].chars() {
         if i.is_whitespace() {
-            return Cecision::Deny(Decision::Err(input[0].into()));
+            return Cecision::Deny(input[0].into());
         }
     }
     out.push(Type::Atom(input[0].to_string()));
     Cecision::Accept(1)
 }
 
-fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     match base64::decode(input[0]) {
         Ok(base64) => {
             out.push(Type::Raw(base64));
             Cecision::Accept(1)
         }
-        Err(err) => Cecision::Deny(Decision::Err(format!["{}", err])),
+        Err(err) => Cecision::Deny(format!["{}", err]),
     }
 }
 
-fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     match input[0].parse::<bool>().ok().map(Type::Bool) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(Decision::Err(input[0].into()));
+            return Cecision::Deny(input[0].into());
         }
     }
     Cecision::Accept(1)
 }
 
-fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     match input[0].parse::<f32>().ok().map(Type::F32) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(Decision::Err(input[0].into()));
+            return Cecision::Deny("got string: ".to_string() + input[0]);
         }
     }
     Cecision::Accept(1)
 }
 
-fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     match input[0].parse::<i32>().ok().map(Type::I32) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(Decision::Err(input[0].into()));
+            return Cecision::Deny(input[0].into());
         }
     }
     Cecision::Accept(1)
 }
 
-fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     out.push(Type::String(input[0].to_string()));
     Cecision::Accept(1)
 }
 
-fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, 1)?;
     match input[0].parse::<u8>().ok().map(Type::U8) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(Decision::Err(input[0].into()));
+            return Cecision::Deny(input[0].into());
         }
     }
     Cecision::Accept(1)
 }
 
-fn ignore_all_function(input: &[&str], _: &mut SVec<Type>) -> Cecision<Decision> {
+fn ignore_all_function(input: &[&str], _: &mut SVec<Type>) -> Cecision<String> {
     Cecision::Accept(input.len())
 }
 
-fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     let mut cnt = 0;
     for i in input.iter() {
         if let Some(num) = i.parse::<i32>().ok().map(Type::I32) {
@@ -166,7 +166,7 @@ fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision>
     Cecision::Accept(cnt)
 }
 
-fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     aslen(input, input.len())?;
     let mut cnt = 0;
     for (idx, i) in input.iter().enumerate() {
@@ -176,9 +176,9 @@ fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decisi
     Cecision::Accept(cnt)
 }
 
-fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decision> {
+fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     if input.len() == 1 {
-        return Cecision::Deny(Decision::Help("<string>".into()));
+        return Cecision::Deny("<string>".into());
     }
     aslen(input, 2)?;
     out.push(Type::String(input[0].to_string()));
@@ -188,9 +188,14 @@ fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<Decisio
 
 // ---
 
-fn aslen(input: &[&str], input_l: usize) -> Result<(), Decision> {
+fn aslen(input: &[&str], input_l: usize) -> Result<(), String> {
     if input.len() < input_l {
-        Err(Decision::Err(format!["Too few elements: {:?}", input]))
+        Err(format![
+            "Too few elements: {:?}, length: {}, expected: {}",
+            input,
+            input.len(),
+            input_l
+        ])
     } else {
         Ok(())
     }

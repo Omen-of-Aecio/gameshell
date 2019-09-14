@@ -3,7 +3,7 @@
 //! GameShell is a little lisp-like command shell made to be embedded in rust programs. It has no
 //! runtime and attempts to call given handlers as fast as possible. This means that GameShell is
 //! made for one-time commands, where the heavy lifting is done in your specified handler
-//! functions. It does not do any JIT/compilation or bytecode conversion, but goes straight to the
+//! functions. It does not do any JIT/compilation or bytecode conversion, but goes straight to a
 //! handler and calls it.
 //!
 //! # Language #
@@ -30,7 +30,7 @@
 //!
 //! ```
 //! use gameshell::{
-//!     decision::Decision, predicates::*, types::Type, Evaluator, GameShell, IncConsumer,
+//!     predicates::*, types::Type, Evaluator, GameShell, IncConsumer,
 //! };
 //! use std::str::from_utf8;
 //!
@@ -103,12 +103,11 @@
 //!
 //! These commands return strings that contain useful information to be displayed to the user.
 #![deny(missing_docs)]
+pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
 use crate::{
-    decision::Decision,
     incconsumer::{Consumption, Process, Validation},
     types::Type,
 };
-pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
 use cmdmat::RegError;
 pub use cmdmat::Spec;
 pub use metac::{Evaluate, PartialParse, PartialParseOp};
@@ -117,7 +116,6 @@ use std::{
     str::from_utf8,
 };
 
-pub mod decision;
 pub mod evaluator;
 mod feedback;
 mod incconsumer;
@@ -161,14 +159,14 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
     }
 
     /// Register a command specificator to this gameshell instance
-    pub fn register(&mut self, spec: Spec<'_, 'a, Type, Decision, C>) -> Result<(), RegError> {
+    pub fn register(&mut self, spec: Spec<'_, 'a, Type, String, C>) -> Result<(), RegError> {
         self.evaluator.register(spec)
     }
 
     /// Register multiple command specifications to this gameshell instance
     pub fn register_many(
         &mut self,
-        spec: &[Spec<'_, 'a, Type, Decision, C>],
+        spec: &[Spec<'_, 'a, Type, String, C>],
     ) -> Result<(), RegError> {
         self.evaluator.register_many(spec)
     }
