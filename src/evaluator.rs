@@ -77,6 +77,9 @@ impl<'a, C> Evaluator<'a, C> {
                             Err(ParseError::PrematureRightParenthesis) => {
                                 return Err(Feedback::Err("Right parenthesis encountered with no matching left parenthesis".into()));
                             }
+                            Err(ParseError::NothingToParse) => {
+                                return Err(Feedback::Err("No input to parse".into()));
+                            }
                         }
                     }
                 }

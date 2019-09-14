@@ -139,12 +139,14 @@ pub enum ParseError {
     DanglingLeftParenthesis,
     /// A right parenthesis has been found without having read a corresponding left parenthesis
     PrematureRightParenthesis,
+    /// No input provided
+    NothingToParse,
 }
 
 /// Interpreter trait
 ///
 /// Central trait to add the interpreter to your custom evaluator
-pub trait Evaluate<T: Default> {
+pub trait Evaluate<T> {
     /// Evaluate a single statement
     ///
     /// Statements are line-separated pieces of code turned into fixed data
@@ -170,13 +172,13 @@ pub trait Evaluate<T: Default> {
     fn interpret_multiple(&mut self, code: &str) -> Result<T, ParseError> {
         let mut old_idx = 0;
         let mut lparen_stack = 0;
-        let mut result = T::default();
+        let mut result = Err(ParseError::NothingToParse);
         let mut idx = 0;
         let mut seen_non_ws = false;
         for ch in code.chars() {
             if ch == '\n' && lparen_stack == 0 && seen_non_ws {
                 seen_non_ws = false;
-                result = self.interpret_single(&code[old_idx..idx])?;
+                result = Ok(self.interpret_single(&code[old_idx..idx])?);
                 old_idx = idx + 1;
             } else if ch == '(' {
                 lparen_stack += 1;
@@ -191,9 +193,9 @@ pub trait Evaluate<T: Default> {
             idx += ch.len_utf8();
         }
         if idx != old_idx && seen_non_ws {
-            result = self.interpret_single(&code[old_idx..idx])?;
+            result = Ok(self.interpret_single(&code[old_idx..idx])?);
         }
-        Ok(result)
+        result
     }
 }
 
@@ -298,7 +300,11 @@ fn parse<'a>(line: &'a str, output: &mut SVec<Data<'a>>) -> Result<(), ParseErro
     if start != stop {
         output.push(Data::Atom(&line[start..stop]));
     }
-    Ok(())
+    if output.is_empty() {
+        Err(ParseError::NothingToParse)
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -310,7 +316,7 @@ mod tests {
     fn empty_parse() {
         let line = "";
         let mut data = SVec::<Data>::new();
-        parse(line, &mut data).unwrap();
+        assert_eq![Err(ParseError::NothingToParse), parse(line, &mut data)];
 
         assert_eq![true, data.is_empty()];
     }
@@ -451,17 +457,16 @@ mod tests {
             pub invoked: usize,
         }
         impl Evaluate<()> for Eval {
-            fn evaluate<'a>(&mut self, data: &[Data<'a>]) {
-                assert_eq![0, data.len()];
+            fn evaluate<'a>(&mut self, _: &[Data<'a>]) {
                 self.invoked += 1;
             }
         }
         let mut eval = Eval { invoked: 0 };
 
         let line = "";
-        eval.interpret_single(line).unwrap();
-        assert_eq![1, eval.invoked];
-        eval.interpret_multiple(line).unwrap();
+        assert_eq![Err(ParseError::NothingToParse), eval.interpret_single(line)];
+        assert_eq![0, eval.invoked];
+        eval.interpret_multiple("command").unwrap();
         assert_eq![1, eval.invoked];
     }
 
@@ -471,20 +476,16 @@ mod tests {
             pub invoked: usize,
         }
         impl Evaluate<()> for Eval {
-            fn evaluate<'a>(&mut self, data: &[Data<'a>]) {
-                assert_eq![0, data.len()];
-                self.invoked += 1;
+            fn evaluate<'a>(&mut self, _: &[Data<'a>]) {
+                panic!["Should never be invoked"]
             }
         }
         let mut eval = Eval { invoked: 0 };
 
         let line = " ";
-        eval.interpret_single(line).unwrap();
-        assert_eq![1, eval.invoked];
-        eval.interpret_multiple(line).unwrap();
-        assert_eq![1, eval.invoked];
-        eval.interpret_multiple(" \n").unwrap();
-        assert_eq![1, eval.invoked];
+        assert_eq![Err(ParseError::NothingToParse), eval.interpret_single(line)];
+        assert_eq![Err(ParseError::NothingToParse), eval.interpret_multiple(line)];
+        assert_eq![Err(ParseError::NothingToParse), eval.interpret_multiple(" \n")];
     }
 
     #[test]
