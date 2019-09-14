@@ -217,15 +217,6 @@ impl<'a, C, R: Read, W: Write> IncConsumer for GameShell<'a, C, R, W> {
                             return Process::Stop;
                         }
                     }
-                    Feedback::Help(res) => {
-                        if !res.is_empty() {
-                            if self.writer.write_all(res.as_bytes()).is_err() {
-                                return Process::Stop;
-                            }
-                        } else if self.writer.write_all(b"Empty help message").is_err() {
-                            return Process::Stop;
-                        }
-                    }
                 }
                 if self.writer.flush().is_err() {
                     return Process::Stop;

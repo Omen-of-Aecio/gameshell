@@ -68,9 +68,6 @@ impl<'a, C> Evaluator<'a, C> {
                             Ok(Feedback::Ok(string)) => {
                                 content.push(string);
                             }
-                            Ok(ref res @ Feedback::Help(_)) => {
-                                return Err(res.clone());
-                            }
                             Ok(ref res @ Feedback::Err(_)) => {
                                 return Err(res.clone());
                             }
