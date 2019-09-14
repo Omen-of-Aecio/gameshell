@@ -97,7 +97,7 @@ fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(input[0].into());
+            return Cecision::Deny("got string: ".to_string() + input[0]);
         }
     }
     Cecision::Accept(1)
@@ -123,7 +123,7 @@ fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(input[0].into());
+            return Cecision::Deny("got string: ".to_string() + input[0]);
         }
     }
     Cecision::Accept(1)
@@ -142,7 +142,7 @@ fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
             out.push(num);
         }
         None => {
-            return Cecision::Deny(input[0].into());
+            return Cecision::Deny("got string: ".to_string() + input[0]);
         }
     }
     Cecision::Accept(1)
@@ -178,7 +178,7 @@ fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String
 
 fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
     if input.len() == 1 {
-        return Cecision::Deny("<string>".into());
+        return Cecision::Deny("expected 1 more string".into());
     }
     aslen(input, 2)?;
     out.push(Type::String(input[0].to_string()));
