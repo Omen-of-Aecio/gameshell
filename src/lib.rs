@@ -103,7 +103,7 @@
 //!
 //! These commands return strings that contain useful information to be displayed to the user.
 #![deny(missing_docs)]
-pub use crate::{evaluator::Evaluator, feedback::Feedback, incconsumer::IncConsumer};
+pub use crate::{evaluator::Evaluator, incconsumer::IncConsumer};
 use crate::{
     incconsumer::{Consumption, Process, Validation},
     types::Type,
@@ -117,10 +117,13 @@ use std::{
 };
 
 pub mod evaluator;
-mod feedback;
 mod incconsumer;
 pub mod predicates;
 pub mod types;
+
+/// Feedback provided by the interpreter. All results are either a success string or an error
+/// string.
+pub type Feedback = Result<String, String>;
 
 /// The main virtual machine wrapper for a game shell
 ///
