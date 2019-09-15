@@ -194,7 +194,6 @@ impl<'a, C> Evaluator<'a, C> {
     fn get_current_depth(&self) -> usize {
         self.current_depth
     }
-
 }
 
 impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
@@ -426,7 +425,10 @@ mod tests {
             call += ")";
         }
 
-        assert_eq![Err("Recursion limit reached: 100".into()), eval.interpret_single(&call).unwrap()];
+        assert_eq![
+            Err("Recursion limit reached: 100".into()),
+            eval.interpret_single(&call).unwrap()
+        ];
         assert_eq![0, eval.get_current_depth()];
     }
 }

@@ -117,7 +117,7 @@ use crate::{
     types::Type,
 };
 use cmdmat::RegError;
-pub use cmdmat::Spec;
+pub use cmdmat::{self, Spec};
 pub use metac::{Evaluate, PartialParse, PartialParseOp};
 use std::{
     io::{Read, Write},

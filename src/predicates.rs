@@ -1,7 +1,69 @@
 //! Contains pre-built predicates for use outside this library for creating command
 //! specifications.
+//!
+//! ## Writing a custom predicate ##
+//!
+//! ```
+//! use gameshell::{types::Type, Evaluate, Evaluator};
+//! use gameshell::cmdmat::{Decider, Decision, SVec};
+//!
+//! // This is the general decider type to use
+//! pub type SomeDec = Option<&'static Decider<Type, String>>;
+//!
+//! // This is your decider that you will use when registering a handler
+//! pub const I32_NUMBER_ABOVE_123: SomeDec = Some(&Decider {
+//!     description: "<i32-over-123>",
+//!     decider: i32_number_above_123,
+//! });
+//!
+//! fn i32_number_above_123(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
+//!     // Check if input is non-empty
+//!     if input.is_empty() {
+//!         return Decision::Deny("No input received".into());
+//!     }
+//!
+//!     // Ensure string contains no whitespaces
+//!     for i in input[0].chars() {
+//!         if i.is_whitespace() {
+//!             return Decision::Deny(input[0].into());
+//!         }
+//!     }
+//!
+//!     // Parse string to i32
+//!     let number = input[0].parse::<i32>();
+//!     let number = match number {
+//!         Ok(number) => number,
+//!         Err(err) => return Decision::Deny(format!["{:?}", err]),
+//!     };
+//!
+//!     // Ensure number is >123
+//!     if !(number > 123) {
+//!         return Decision::Deny("Number is not >123".into());
+//!     }
+//!
+//!     // All checks passed, push the value to the output
+//!     out.push(Type::I32(number));
+//!
+//!     // Tell the GameShell machinery that we have consumed 1 argument
+//!     Decision::Accept(1)
+//! }
+//!
+//! fn handler(_: &mut (), args: &[Type]) -> Result<String, String> {
+//!     if let [Type::I32(number)] = args {
+//!         println!["The number {} is definitely greater than 123", number];
+//!         Ok("We can return whatever we want to here".into())
+//!     } else {
+//!         panic!["Wrong arguments"];
+//!     }
+//! }
+//!
+//! let mut eval = Evaluator::new(());
+//! eval.register((&[("my-command", I32_NUMBER_ABOVE_123)], handler));
+//! eval.interpret_single("my-command 124").unwrap().unwrap();
+//! assert_eq![Err("Expected <i32-over-123>. Decider: Number is not >123".into()), eval.interpret_single("my-command -9").unwrap()];
+//! ```
 use crate::types::Type;
-use cmdmat::{Decider, Decision as Cecision, SVec};
+use cmdmat::{Decider, Decision, SVec};
 
 // ---
 
@@ -68,91 +130,91 @@ pub const TWO_STRINGS: SomeDec = Some(&Decider {
 
 // ---
 
-fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_atom_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     for i in input[0].chars() {
         if i.is_whitespace() {
-            return Cecision::Deny(input[0].into());
+            return Decision::Deny(input[0].into());
         }
     }
     out.push(Type::Atom(input[0].to_string()));
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_base64_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match base64::decode(input[0]) {
         Ok(base64) => {
             out.push(Type::Raw(base64));
-            Cecision::Accept(1)
+            Decision::Accept(1)
         }
-        Err(err) => Cecision::Deny(format!["{}", err]),
+        Err(err) => Decision::Deny(format!["{}", err]),
     }
 }
 
-fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_bool_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match input[0].parse::<bool>().ok().map(Type::Bool) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny("got string: ".to_string() + input[0]);
+            return Decision::Deny("got string: ".to_string() + input[0]);
         }
     }
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_f32_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match input[0].parse::<f32>().ok().map(Type::F32) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny("got string: ".to_string() + input[0]);
+            return Decision::Deny("got string: ".to_string() + input[0]);
         }
     }
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_i32_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match input[0].parse::<i32>().ok().map(Type::I32) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny("got string: ".to_string() + input[0]);
+            return Decision::Deny("got string: ".to_string() + input[0]);
         }
     }
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     out.push(Type::String(input[0].to_string()));
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match input[0].parse::<u8>().ok().map(Type::U8) {
         Some(num) => {
             out.push(num);
         }
         None => {
-            return Cecision::Deny("got string: ".to_string() + input[0]);
+            return Decision::Deny("got string: ".to_string() + input[0]);
         }
     }
-    Cecision::Accept(1)
+    Decision::Accept(1)
 }
 
-fn ignore_all_function(input: &[&str], _: &mut SVec<Type>) -> Cecision<String> {
-    Cecision::Accept(input.len())
+fn ignore_all_function(input: &[&str], _: &mut SVec<Type>) -> Decision<String> {
+    Decision::Accept(input.len())
 }
 
-fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     let mut cnt = 0;
     for i in input.iter() {
         if let Some(num) = i.parse::<i32>().ok().map(Type::I32) {
@@ -163,27 +225,27 @@ fn many_i32_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
             break;
         }
     }
-    Cecision::Accept(cnt)
+    Decision::Accept(cnt)
 }
 
-fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, input.len())?;
     let mut cnt = 0;
     for (idx, i) in input.iter().enumerate() {
         out.push(Type::String((*i).into()));
         cnt = idx + 1;
     }
-    Cecision::Accept(cnt)
+    Decision::Accept(cnt)
 }
 
-fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Cecision<String> {
+fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     if input.len() == 1 {
-        return Cecision::Deny("expected 1 more string".into());
+        return Decision::Deny("expected 1 more string".into());
     }
     aslen(input, 2)?;
     out.push(Type::String(input[0].to_string()));
     out.push(Type::String(input[1].to_string()));
-    Cecision::Accept(2)
+    Decision::Accept(2)
 }
 
 // ---

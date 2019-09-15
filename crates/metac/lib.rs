@@ -508,8 +508,14 @@ mod tests {
 
         let line = " ";
         assert_eq![Err(ParseError::NothingToParse), eval.interpret_single(line)];
-        assert_eq![Err(ParseError::NothingToParse), eval.interpret_multiple(line)];
-        assert_eq![Err(ParseError::NothingToParse), eval.interpret_multiple(" \n")];
+        assert_eq![
+            Err(ParseError::NothingToParse),
+            eval.interpret_multiple(line)
+        ];
+        assert_eq![
+            Err(ParseError::NothingToParse),
+            eval.interpret_multiple(" \n")
+        ];
     }
 
     #[test]
