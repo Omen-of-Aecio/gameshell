@@ -15,6 +15,8 @@ use regex::Regex;
 pub struct Evaluator<'a, C> {
     mapping: Mapping<'a, Type, String, C>,
     context: C,
+    current_depth: usize,
+    max_depth: usize,
 }
 
 impl<'a, C> Evaluator<'a, C> {
@@ -24,7 +26,14 @@ impl<'a, C> Evaluator<'a, C> {
         Self {
             mapping: Mapping::default(),
             context,
+            current_depth: 0,
+            max_depth: 100,
         }
+    }
+
+    /// Set the recursion limit of nested calls
+    pub fn set_recursion_limit(&mut self, limit: usize) {
+        self.max_depth = limit;
     }
 
     /// Get a reference to this machine's context
@@ -51,7 +60,7 @@ impl<'a, C> Evaluator<'a, C> {
     }
 
     // Parse subcommands recursively into a vector of strings, fail with feedback otherwise
-    fn parse_subcommands(&mut self, cmds: &[Data]) -> Result<Vec<String>, Feedback> {
+    fn parse_subcommands(&mut self, cmds: &[Data]) -> Result<Vec<String>, String> {
         let mut content: Vec<String> = Vec::new();
         for cmd in cmds {
             match cmd {
@@ -62,22 +71,27 @@ impl<'a, C> Evaluator<'a, C> {
                     if let Some('#') = string.chars().next() {
                         content.push((string[1..]).into());
                     } else {
+                        if self.current_depth == self.max_depth {
+                            return Err(format!["Recursion limit reached: {}", self.max_depth]);
+                        }
+                        self.current_depth += 1;
                         let res = self.interpret_single(string);
+                        self.current_depth -= 1;
                         match res {
                             Ok(Feedback::Ok(string)) => {
                                 content.push(string);
                             }
-                            Ok(ref res @ Feedback::Err(_)) => {
-                                return Err(res.clone());
+                            Ok(Feedback::Err(res)) => {
+                                return Err(res);
                             }
                             Err(ParseError::DanglingLeftParenthesis) => {
-                                return Err(Feedback::Err("Dangling left parenthesis".into()));
+                                return Err("Dangling left parenthesis".into());
                             }
                             Err(ParseError::PrematureRightParenthesis) => {
-                                return Err(Feedback::Err("Right parenthesis encountered with no matching left parenthesis".into()));
+                                return Err("Right parenthesis encountered with no matching left parenthesis".into());
                             }
                             Err(ParseError::NothingToParse) => {
-                                return Err(Feedback::Err("No input to parse".into()));
+                                return Err("No input to parse".into());
                             }
                         }
                     }
@@ -175,13 +189,19 @@ impl<'a, C> Evaluator<'a, C> {
         }
         None
     }
+
+    #[cfg(test)]
+    fn get_current_depth(&self) -> usize {
+        self.current_depth
+    }
+
 }
 
 impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
     fn evaluate(&mut self, commands: &[Data]) -> Feedback {
         let content = match self.parse_subcommands(commands) {
             Ok(content) => content,
-            Err(err) => return err,
+            Err(err) => return Err(err),
         };
         let content_ref = content.iter().map(|s| &s[..]).collect::<Vec<_>>();
 
@@ -362,5 +382,51 @@ mod tests {
         // PNG magic number
         static PNG_MAGIC_NUMBER: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
         assert_eq![PNG_MAGIC_NUMBER, &rx.recv().unwrap()[..]]
+    }
+
+    #[test]
+    fn touching_subcommand() {
+        let mut eval = Evaluator::new(0u32);
+
+        fn handler(context: &mut u32, _: &[Type]) -> Result<String, String> {
+            *context += 1;
+            Ok("string".into())
+        }
+
+        eval.register((&[("call", ANY_STRING)], handler)).unwrap();
+        eval.interpret_single("call(call _)").unwrap().unwrap();
+        assert_eq![2, *eval.context()];
+        eval.interpret_single("call(call(call _))")
+            .unwrap()
+            .unwrap();
+        assert_eq![2 + 3, *eval.context()];
+        eval.interpret_multiple("call(call(call _))")
+            .unwrap()
+            .unwrap();
+        assert_eq![2 + 3 + 3, *eval.context()];
+    }
+
+    #[test]
+    fn recursive_call_stack() {
+        let mut eval = Evaluator::new(());
+
+        fn handler(_: &mut (), _: &[Type]) -> Result<String, String> {
+            Ok("string".into())
+        }
+
+        eval.register((&[("call", ANY_STRING)], handler)).unwrap();
+
+        let mut call = "call".to_string();
+        let count = 1000;
+        for _ in 0..count {
+            call += "(call";
+        }
+        call += " _";
+        for _ in 0..count {
+            call += ")";
+        }
+
+        assert_eq![Err("Recursion limit reached: 100".into()), eval.interpret_single(&call).unwrap()];
+        assert_eq![0, eval.get_current_depth()];
     }
 }
