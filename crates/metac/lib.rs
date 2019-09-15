@@ -297,6 +297,9 @@ fn parse<'a>(line: &'a str, output: &mut SVec<Data<'a>>) -> Result<(), ParseErro
             start = stop;
         } else if ch == '(' {
             lparen_stack += 1;
+            if start != stop {
+                output.push(Data::Atom(&line[start..stop]));
+            }
             stop += ch.len_utf8();
             start = stop;
         } else if ch == ')' {
@@ -458,6 +461,16 @@ mod tests {
             ParseError::DanglingLeftParenthesis,
             parse(line, &mut data).unwrap_err()
         ];
+    }
+
+    #[test]
+    fn parse_touching_nested_call() {
+        let line = "call(call)";
+        let mut data = SVec::<_>::new();
+        parse(line, &mut data).unwrap();
+
+        assert_eq![2, data.len()];
+        assert_eq![&[Data::Atom("call"), Data::Command("call")], &data[0..2]];
     }
 
     // ---
