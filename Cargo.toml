@@ -2,6 +2,7 @@
 name = "gameshell"
 version = "0.1.0"
 authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
+description = "Simple lisp/bash-like shell to integrate into programs"
 edition = "2018"
 
 [dependencies]
