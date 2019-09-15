@@ -100,6 +100,14 @@
 //!     assert_eq![5, eval.interpret_multiple("This is (\na) single statement").unwrap()];
 //! }
 //! ```
+#![deny(
+    missing_docs,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
 #![feature(test)]
 #![no_std]
 extern crate test;
@@ -107,7 +115,7 @@ extern crate test;
 use smallvec::SmallVec;
 
 /// A specific-sized small vector
-type SVec<A> = SmallVec<[A; 8]>;
+type SVec<A> = SmallVec<[A; 16]>;
 
 /// Distinguishes atoms from commands
 #[derive(Clone, Copy, Debug, Hash, PartialEq)]
@@ -216,8 +224,11 @@ pub struct PartialParse {
 /// Description of the parsing state
 #[derive(Debug, PartialEq)]
 pub enum PartialParseOp {
+    /// A command is completed, use the previous characters and feed it to the command parser
     Ready,
+    /// Not yet a finished command, continue feeding characters
     Unready,
+    /// Discard all previous characters
     Discard,
 }
 

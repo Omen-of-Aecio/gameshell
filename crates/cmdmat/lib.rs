@@ -174,10 +174,17 @@
 //!     assert![finalizer.is_some()];
 //! }
 //! ```
+#![deny(
+    missing_docs,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
 #![feature(test, try_trait)]
 extern crate test;
 
-use either::Either;
 use smallvec::SmallVec;
 use std::{collections::HashMap, ops::Try};
 
@@ -202,13 +209,44 @@ pub type FinWithArgs<'o, A, C> = (Finalizer<A, C>, SVec<A>);
 /// Either a mapping or a descriptor of a mapping
 pub type MapOrDesc<'a, 'b, A, D, C> = Either<&'b Mapping<'a, A, D, C>, &'a str>;
 
+// ---
+
+/// Either sum type
+pub enum Either<L, R> {
+    /// Left variant
+    Left(L),
+    /// Right variant
+    Right(R),
+}
+
+impl<L, R> Either<L, R> {
+    /// Convert [Either] into [Option].
+    pub fn left(self) -> Option<L> {
+        match self {
+            Either::Left(left) => Some(left),
+            Either::Right(_) => None,
+        }
+    }
+    /// Convert [Either] into [Option].
+    pub fn right(self) -> Option<R> {
+        match self {
+            Either::Left(_) => None,
+            Either::Right(right) => Some(right),
+        }
+    }
+}
+
+// ---
+
 /// A decision contains information about token consumption by the decider
 ///
 /// If the decider has accepted the tokens, it will return an `Accept(usize)`, if it failed to
 /// parse interpret the tokens, it will return a deny value.
 #[derive(Debug, PartialEq)]
 pub enum Decision<D> {
+    /// Accept any number of inputs
     Accept(usize),
+    /// Deny the input
     Deny(D),
 }
 
@@ -235,31 +273,45 @@ impl<D> Try for Decision<D> {
 /// it has consumed. If it could not process the input tokens it will return a `Deny`, containing
 /// the reason for denying.
 pub struct Decider<A, D> {
+    /// The description of the decider. Used in help and error messages.
     pub description: &'static str,
+    /// Decider function, takes a list of inputs and writes it to the list of outputs, returns a
+    /// decision that informs the machinery how to continue, by either telling it to consume N
+    /// items or to deny the input.
     pub decider: fn(&[&str], &mut SVec<A>) -> Decision<D>,
 }
 
 /// Errors we can get by registering specs.
 #[derive(Debug, PartialEq)]
 pub enum RegError {
+    /// Decider for this node already exists
     DeciderAlreadyExists,
+    /// Finalizer for this node already exists
     FinalizerAlreadyExists,
 }
 
 /// Errors happening during lookup of a command.
 #[derive(Debug, PartialEq)]
 pub enum LookError<D> {
+    /// Decider consumed more than available input
     DeciderAdvancedTooFar,
+    /// Decider denies the input
     DeciderDenied(String, D),
+    /// A finalizer does not exist for this entry
     FinalizerDoesNotExist,
+    /// The mapping element does not exist
     UnknownMapping(String),
 }
 
 /// An entry in the mapping table
 pub struct MappingEntry<'a, A, D, C> {
+    /// The literal this mapping entry is matched against
     pub literal: &'a str,
+    /// The decider function for miscellaneous arguments
     pub decider: Option<&'a Decider<A, D>>,
+    /// The finalizer function for this mapping
     pub finalizer: Option<Finalizer<A, C>>,
+    /// Submap containing all other literal-mapping pairs
     pub submap: &'a HashMap<&'a str, Mapping<'a, A, D, C>>,
 }
 
@@ -386,6 +438,7 @@ impl<'a, A, D, C> Mapping<'a, A, D, C> {
         })
     }
 
+    /// Acquire any intermediate mapping, discards parsed inputs
     pub fn partial_lookup<'b>(
         &'b self,
         input: &'b [&str],
@@ -430,14 +483,17 @@ impl<'a, A, D, C> Mapping<'a, A, D, C> {
         Err(LookError::UnknownMapping(input[0].to_string()))
     }
 
+    /// Get the decider associated with this node
     pub fn decider(&self) -> &Option<&'a Decider<A, D>> {
         &self.decider
     }
 
+    /// Get the finalizer associated with this node
     pub fn finalizer(&self) -> &Option<Finalizer<A, C>> {
         &self.finalizer
     }
 
+    /// Iterator looping over all submappings
     pub fn iter(&self) -> impl Iterator<Item = (&&'a str, &Mapping<'a, A, D, C>)> {
         self.map.iter()
     }

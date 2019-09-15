@@ -103,7 +103,14 @@
 //! Autocomplete a query.
 //!
 //! These commands return strings that contain useful information to be displayed to the user.
-#![deny(missing_docs)]
+#![deny(
+    missing_docs,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
 pub use crate::{evaluator::Evaluator, incconsumer::IncConsumer};
 use crate::{
     incconsumer::{Consumption, Process, Validation},
@@ -298,7 +305,7 @@ mod tests {
         assert_eq![2, *eval.context()];
         assert_eq![
             "Input too big for buffer, terminating instance",
-            std::str::from_utf8(&write[4..50]).unwrap()
+            from_utf8(&write[4..50]).unwrap()
         ];
     }
 

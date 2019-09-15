@@ -1,7 +1,7 @@
 [package]
 name = "metac"
 version = "0.0.0"
-authors = ["Erlend Hofstad Langseth <3rlendhl@gmail.com>", "Kevin Robert Stravers <macocio@gmail.com>"]
+authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 edition = "2018"
 
 [lib]
@@ -9,4 +9,11 @@ name = "metac"
 path = "lib.rs"
 
 [dependencies]
-smallvec = "0.6.9"
+smallvec = "0.6.10"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "basic"
+harness = false

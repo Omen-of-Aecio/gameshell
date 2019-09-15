@@ -1,7 +1,6 @@
 //! Core virtual machine used by [GameShell]
 use crate::{types::Type, Feedback};
-use cmdmat::{self, LookError, Mapping, RegError, Spec};
-use either::Either;
+use cmdmat::{self, Either, LookError, Mapping, RegError, Spec};
 use metac::{Data, Evaluate, ParseError};
 use regex::Regex;
 

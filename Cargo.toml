@@ -3,12 +3,12 @@ name = "gameshell"
 version = "0.1.0"
 authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 description = "Simple lisp/bash-like shell to integrate into programs"
+keywords = ["language", "interpreter", "lisp", "bash"]
 edition = "2018"
 
 [dependencies]
-base64 = "0.10"
+base64 = "0.10.1"
 cmdmat = { path = "crates/cmdmat" }
-either = "1.5.0"
 metac = { path = "crates/metac" }
 quickcheck = { version = "0.8", optional = true }
 quickcheck_macros = { version = "0.8", optional = true }
@@ -16,15 +16,15 @@ rand = "0.6"
 regex = "1.1.7"
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = "0.3"
 crossbeam-channel = "0.3.8"
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
 
-[[bench]]
-name = "basic"
-harness = false
-
 [features]
 default = []
 with-quickcheck = ["quickcheck", "quickcheck_macros"]
+
+[[bench]]
+name = "basic"
+harness = false
