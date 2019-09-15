@@ -5,11 +5,13 @@ authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 description = "Simple lisp/bash-like shell to integrate into programs"
 keywords = ["language", "interpreter", "lisp", "bash"]
 edition = "2018"
+homepage = "https://docs.rs/gameshell"
+repository = "https://github.com/Omen-of-Aecio/gameshell"
 
 [dependencies]
 base64 = "0.10.1"
-cmdmat = { path = "crates/cmdmat", version = "0.1.0" }
-metac = { path = "crates/metac", version = "0.0.0" }
+cmdmat = "0.1.1"
+metac = "0.1.0"
 quickcheck = { version = "0.8", optional = true }
 quickcheck_macros = { version = "0.8", optional = true }
 rand = "0.6"
