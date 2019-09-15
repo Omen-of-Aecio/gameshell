@@ -8,8 +8,8 @@ edition = "2018"
 
 [dependencies]
 base64 = "0.10.1"
-cmdmat = { path = "crates/cmdmat" }
-metac = { path = "crates/metac" }
+cmdmat = { path = "crates/cmdmat", version = "0.1.0" }
+metac = { path = "crates/metac", version = "0.0.0" }
 quickcheck = { version = "0.8", optional = true }
 quickcheck_macros = { version = "0.8", optional = true }
 rand = "0.6"
