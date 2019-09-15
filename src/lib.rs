@@ -66,7 +66,8 @@
 //!     // Run the command loop, keeps reading from the tcp buffer until the buffer has no more
 //!     // elements. When reading from a `TcpStream` this call will block until the stream is
 //!     // closed. The `buffer` provided here is the buffer for parsing a single incoming whole
-//!     // command. If the command exceeds this size, the command will be discarded.
+//!     // command. If the command exceeds this size, the command will be discarded and the
+//!     // connection severed.
 //!     let buffer = &mut [0u8; 1024];
 //!     eval.run(buffer);
 //!
