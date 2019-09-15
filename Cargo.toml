@@ -7,6 +7,7 @@ keywords = ["language", "interpreter", "lisp", "bash"]
 edition = "2018"
 homepage = "https://docs.rs/gameshell"
 repository = "https://github.com/Omen-of-Aecio/gameshell"
+license = "LGPL-3.0-or-later"
 
 [dependencies]
 base64 = "0.10.1"
