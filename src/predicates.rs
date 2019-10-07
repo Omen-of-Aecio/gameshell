@@ -107,6 +107,11 @@ pub const ANY_U8: SomeDec = Some(&Decider {
     description: "<u8>",
     decider: any_u8_function,
 });
+/// Accepts a single usize
+pub const ANY_USIZE: SomeDec = Some(&Decider {
+    description: "<usize>",
+    decider: any_usize_function,
+});
 /// Ignores all arguments
 pub const IGNORE_ALL: SomeDec = Some(&Decider {
     description: "<anything> ...",
@@ -200,6 +205,19 @@ fn any_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String>
 fn any_u8_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     aslen(input, 1)?;
     match input[0].parse::<u8>().ok().map(Type::U8) {
+        Some(num) => {
+            out.push(num);
+        }
+        None => {
+            return Decision::Deny("got string: ".to_string() + input[0]);
+        }
+    }
+    Decision::Accept(1)
+}
+
+fn any_usize_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
+    aslen(input, 1)?;
+    match input[0].parse::<usize>().ok().map(Type::Usize) {
         Some(num) => {
             out.push(num);
         }

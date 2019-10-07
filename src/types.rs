@@ -18,13 +18,15 @@ pub enum Type {
     String(String),
     /// An unsigned 8-bit value
     U8(u8),
+    /// An unsigned size type
+    Usize(usize),
 }
 
 #[cfg(any(test, feature = "with-quickcheck"))]
 impl quickcheck::Arbitrary for Type {
     fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
         use rand::Rng;
-        match g.gen_range(0, 8) {
+        match g.gen_range(0, 9) {
             0 => Type::Atom(String::arbitrary(g)),
             1 => Type::Bool(bool::arbitrary(g)),
             2 => Type::Command(String::arbitrary(g)),
@@ -33,6 +35,7 @@ impl quickcheck::Arbitrary for Type {
             5 => Type::Raw(Vec::<u8>::arbitrary(g)),
             6 => Type::String(String::arbitrary(g)),
             7 => Type::U8(u8::arbitrary(g)),
+            8 => Type::Usize(usize::arbitrary(g)),
             _ => unimplemented![],
         }
     }
