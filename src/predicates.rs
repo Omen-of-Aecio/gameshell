@@ -127,6 +127,11 @@ pub const MANY_STRING: SomeDec = Some(&Decider {
     description: "<string> ...",
     decider: many_string_function,
 });
+/// Accepts a positive f32
+pub const POSITIVE_F32: SomeDec = Some(&Decider {
+    description: "<f32>=0>",
+    decider: positive_f32_function,
+});
 /// Accepts two strings
 pub const TWO_STRINGS: SomeDec = Some(&Decider {
     description: "<string> <string>",
@@ -256,6 +261,19 @@ fn many_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String
     Decision::Accept(cnt)
 }
 
+fn positive_f32_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
+    aslen(input, 1)?;
+    match input[0].parse::<f32>().ok().map(Type::F32) {
+        Some(Type::F32(val)) if val >= 0.0f32 => {
+            out.push(Type::F32(val));
+        }
+        _ => {
+            return Decision::Deny("got string: ".to_string() + input[0]);
+        }
+    }
+    Decision::Accept(1)
+}
+
 fn two_string_function(input: &[&str], out: &mut SVec<Type>) -> Decision<String> {
     if input.len() == 1 {
         return Decision::Deny("expected 1 more string".into());
@@ -298,6 +316,7 @@ mod tests {
         any_u8_function(input, out);
         ignore_all_function(input, out);
         many_string_function(input, out);
+        positive_f32_function(input, out);
         two_string_function(input, out);
     }
 }
