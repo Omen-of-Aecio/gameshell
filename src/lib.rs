@@ -38,7 +38,7 @@
 //! // std::io::Read, and will efficiently acquire data from such a stream.
 //! let read = b"Lorem ipsum 1.23\n";
 //! // This is the output stream, GameShell will use this to write messages out.
-//! let mut write = [0u8; 12];
+//! let mut write = [0u8; 18];
 //!
 //! // A gameshell is created by supplying a context object (here 0u8), and an IO stream.
 //! let mut eval = GameShell::new(0u8, &read[..], &mut write[..]);
@@ -73,7 +73,7 @@
 //! // Ensure that we have run at least once, our starting context was 0, which should now be 1
 //! assert_eq!(1, *eval.context());
 //! // Our Ok message has been written to the writer
-//! assert_eq!("Hello world!", from_utf8(&write[..]).unwrap());
+//! assert_eq!("Ok(\"Hello world!\")", from_utf8(&write[..]).unwrap());
 //! ```
 //!
 //! # Why does a command handler return a string instead of a type? #
@@ -194,7 +194,7 @@ impl<'a, C, R: Read, W: Write> IncConsumer for GameShell<'a, C, R, W> {
         if output.is_empty() {
             let _ = self
                 .writer
-                .write(b"Input too big for buffer, terminating instance");
+                .write(b"DecodeError(\"Internal buffer is full, disconnecting\")");
             return Consumption::Stop;
         }
         match self.reader.read(output) {
@@ -214,44 +214,60 @@ impl<'a, C, R: Read, W: Write> IncConsumer for GameShell<'a, C, R, W> {
         let string = from_utf8(input);
         if let Ok(string) = string {
             let result = self.evaluator.interpret_single(string);
-            if let Ok(result) = result {
-                match result {
-                    Feedback::Ok(res) => {
-                        if !res.is_empty() {
-                            if self.writer.write_all(res.as_bytes()).is_err() {
+            match result {
+                Ok(result) => {
+                    match result {
+                        Feedback::Ok(res) => {
+                            if self
+                                .writer
+                                .write_all(format!("Ok({:?})", res).as_bytes())
+                                .is_err()
+                            {
                                 return Process::Stop;
                             }
-                        } else if self.writer.write_all(b"Ok").is_err() {
-                            return Process::Stop;
+                        }
+                        Feedback::Err(res) => {
+                            if self
+                                .writer
+                                .write_all(format!("Err({:?})", res).as_bytes())
+                                .is_err()
+                            {
+                                return Process::Stop;
+                            }
                         }
                     }
-                    Feedback::Err(res) => {
-                        if self
-                            .writer
-                            .write_all(format!["Err: {}", res].as_bytes())
-                            .is_err()
-                        {
-                            return Process::Stop;
-                        }
+                    if self.writer.flush().is_err() {
+                        return Process::Stop;
                     }
                 }
-                if self.writer.flush().is_err() {
-                    return Process::Stop;
-                }
-            } else {
-                if self
-                    .writer
-                    .write_all(b"Unable to complete query (parse error)")
-                    .is_err()
-                {
-                    return Process::Stop;
-                }
-                if self.writer.flush().is_err() {
-                    return Process::Stop;
+                Err(parse_error) => {
+                    if self
+                        .writer
+                        .write_all(
+                            format!("ParseError(\"Unable to parse input: {:?}\")", parse_error)
+                                .as_bytes(),
+                        )
+                        .is_err()
+                    {
+                        return Process::Stop;
+                    }
+                    if self.writer.flush().is_err() {
+                        return Process::Stop;
+                    }
                 }
             }
             Process::Continue
         } else {
+            if self
+                .writer
+                .write_all(b"DecodeError(\"Received invalid UTF-8 input, disconnecting\")")
+                .is_err()
+            {
+                return Process::Stop;
+            }
+            if self.writer.flush().is_err() {
+                return Process::Stop;
+            }
             Process::Stop
         }
     }
@@ -309,9 +325,16 @@ mod tests {
         eval.run(buffer);
 
         assert_eq!(2, *eval.context());
+
+        let index = write
+            .iter()
+            .enumerate()
+            .find(|(_, &byte)| byte == b'\0')
+            .map(|(idx, _)| idx)
+            .unwrap();
         assert_eq!(
-            "Input too big for buffer, terminating instance",
-            from_utf8(&write[4..50]).unwrap()
+            "Ok(\"\")Ok(\"\")DecodeError(\"Internal buffer is full, disconnecting\")",
+            from_utf8(&write[0..index]).unwrap()
         );
     }
 

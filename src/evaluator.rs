@@ -458,10 +458,7 @@ mod tests {
     fn override_builtins() {
         let mut eval = Evaluator::new(());
 
-        assert_eq!(
-            Ok("".into()),
-            eval.interpret_single("?").unwrap()
-        );
+        assert_eq!(Ok("".into()), eval.interpret_single("?").unwrap());
 
         fn handler(_: &mut (), _: &[Type]) -> Result<String, String> {
             Err("? is not available".into())
@@ -481,7 +478,8 @@ mod tests {
         fn autocomplete_handler(_: &mut (), _: &[Type]) -> Result<String, String> {
             Err("autocomplete is not available".into())
         }
-        eval.register((&[("autocomplete", None)], autocomplete_handler)).unwrap();
+        eval.register((&[("autocomplete", None)], autocomplete_handler))
+            .unwrap();
 
         assert_eq!(
             Err("autocomplete is not available".into()),

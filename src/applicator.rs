@@ -22,7 +22,7 @@ pub async fn tokio_apply<C>(mut evaluator: Evaluator<'_, C>, mut stream: TcpStre
         if begin == buf.len() {
             warn!(log, "Internal buffer is full, disconnecting");
             let _ = stream
-                .write_all(b"Err: Internal buffer is full, disconnecting\n")
+                .write_all(b"DecodeError(\"Internal buffer is full, disconnecting\")")
                 .await;
             return;
         }
@@ -50,40 +50,58 @@ pub async fn tokio_apply<C>(mut evaluator: Evaluator<'_, C>, mut stream: TcpStre
                     if let Ok(string) = string {
                         info!(log, "Got input"; "string" => string);
                         let result = evaluator.interpret_single(string);
-                        if let Ok(result) = result {
-                            match result {
-                                Feedback::Ok(res) => {
-                                    if !res.is_empty() {
-                                        if stream.write_all(res.as_bytes()).await.is_err() {
+                        match result {
+                            Ok(result) => {
+                                match result {
+                                    Feedback::Ok(res) => {
+                                        let result = format!("Ok({:?})", res);
+                                        if stream.write_all(result.as_bytes()).await.is_err() {
                                             return;
                                         }
-                                    } else if stream.write_all(b"Ok").await.is_err() {
-                                        return;
+                                    }
+                                    Feedback::Err(res) => {
+                                        let string = format!("Err({:?})", res);
+                                        if stream.write_all(string.as_bytes()).await.is_err() {
+                                            return;
+                                        }
                                     }
                                 }
-                                Feedback::Err(res) => {
-                                    let string = format!("Err: {}", res);
-                                    if stream.write_all(string.as_bytes()).await.is_err() {
-                                        return;
-                                    }
+                                if stream.flush().await.is_err() {
+                                    return;
                                 }
                             }
-                            if stream.flush().await.is_err() {
-                                return;
-                            }
-                        } else {
-                            if stream
-                                .write_all(b"Err: Unable to complete query (parse error)")
-                                .await
-                                .is_err()
-                            {
-                                return;
-                            }
-                            if stream.flush().await.is_err() {
-                                return;
+                            Err(parse_error) => {
+                                if stream
+                                    .write_all(
+                                        format!(
+                                            "ParseError(\"Unable to parse input: {:?}\")",
+                                            parse_error
+                                        )
+                                        .as_bytes(),
+                                    )
+                                    .await
+                                    .is_err()
+                                {
+                                    return;
+                                }
+                                if stream.flush().await.is_err() {
+                                    return;
+                                }
                             }
                         }
                     } else {
+                        if stream
+                            .write_all(
+                                b"DecodeError(\"Received invalid UTF-8 input, disconnecting\")",
+                            )
+                            .await
+                            .is_err()
+                        {
+                            return;
+                        }
+                        if stream.flush().await.is_err() {
+                            return;
+                        }
                         return;
                     }
                     shift = begin;
@@ -114,7 +132,11 @@ mod tests {
     };
 
     async fn io_assert(stream: &mut TcpStream, input: &str, output: &str) {
-        stream.write_all(input.as_bytes()).await.unwrap();
+        io_assert_raw(stream, input.as_bytes(), output).await;
+    }
+
+    async fn io_assert_raw(stream: &mut TcpStream, input: &[u8], output: &str) {
+        stream.write_all(input).await.unwrap();
         for byte in output.bytes() {
             let mut buffer = [0u8; 1];
             let read = stream.read(&mut buffer[..]).await.unwrap();
@@ -145,33 +167,35 @@ mod tests {
 
             let mut input = TcpStream::connect(address).await.unwrap();
 
-            io_assert(&mut input, "+\n", "Err: Unrecognized mapping: +").await;
-            io_assert(&mut input, "x\n", "Err: Unrecognized mapping: x").await;
-            io_assert(&mut input, "-\n", "Err: Unrecognized mapping: -").await;
+            io_assert(&mut input, "+\n", "Err(\"Unrecognized mapping: +\")").await;
+            io_assert(&mut input, "x\n", "Err(\"Unrecognized mapping: x\")").await;
+            io_assert(&mut input, "-\n", "Err(\"Unrecognized mapping: -\")").await;
             io_assert(
                 &mut input,
                 "lorem-ipsum\n",
-                "Err: Unrecognized mapping: lorem-ipsum",
+                "Err(\"Unrecognized mapping: lorem-ipsum\")",
             )
             .await;
-            io_assert(&mut input, "lorem\n", "Err: Unrecognized mapping: lorem").await;
+            io_assert(
+                &mut input,
+                "lorem\n",
+                "Err(\"Unrecognized mapping: lorem\")",
+            )
+            .await;
+            io_assert(&mut input, "(\n)\n", "Err(\"No input to parse\")").await;
 
-            io_assert(&mut input, "(\n)\n", "Err: No input to parse").await;
-
-            io_assert(&mut input, "?\n", "Ok").await;
+            io_assert(&mut input, "?\n", "Ok(\"\")").await;
             io_assert(
                 &mut input,
                 ")\n",
-                "Err: Unable to complete query (parse error)",
+                "ParseError(\"Unable to parse input: NothingToParse\")",
             )
             .await;
 
-            let mut long = [b'l'; 2000];
-            long[1999] = b'\n';
-            io_assert(
+            io_assert_raw(
                 &mut input,
-                from_utf8(&long).unwrap(),
-                "Err: Internal buffer is full, disconnecting",
+                &[0xA0, 0xA1, b'\n'],
+                "DecodeError(\"Received invalid UTF-8 input, disconnecting\")",
             )
             .await;
         });
@@ -218,11 +242,20 @@ mod tests {
 
             let mut input = TcpStream::connect(address).await.unwrap();
 
-            io_assert(&mut input, "lorem\n", "Err: Decider advanced too far").await;
-            io_assert(&mut input, "?\n", "lorem <ipsum>").await;
-            io_assert(&mut input, "? lorem\n", "lorem <ipsum>").await;
-            io_assert(&mut input, "? ipsum\n", "lorem <ipsum>").await;
-            io_assert(&mut input, "lorem ipsum\n", "dolor sit amet").await;
+            io_assert(&mut input, "lorem\n", "Err(\"Decider advanced too far\")").await;
+            io_assert(&mut input, "?\n", "Ok(\"lorem <ipsum>\")").await;
+            io_assert(&mut input, "? lorem\n", "Ok(\"lorem <ipsum>\")").await;
+            io_assert(&mut input, "? ipsum\n", "Ok(\"lorem <ipsum>\")").await;
+            io_assert(&mut input, "lorem ipsum\n", "Ok(\"dolor sit amet\")").await;
+
+            let mut long = [b'l'; 1025];
+            long[1024] = b'\n';
+            io_assert(
+                &mut input,
+                from_utf8(&long).unwrap(),
+                "DecodeError(\"Internal buffer is full, disconnecting\")",
+            )
+            .await;
         });
     }
 }
