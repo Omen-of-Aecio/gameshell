@@ -6,8 +6,8 @@ use tokio::{net::TcpStream, prelude::*};
 
 /// Apply an evaluator to a tokio TcpStream. Uses an internal buffer efficiently (of 1024 bytes) to
 /// store incoming data using the gsh protocol.
-pub async fn tokio_apply<'a, C>(
-    mut evaluator: Evaluator<'a, C>,
+pub async fn tokio_apply<C>(
+    mut evaluator: Evaluator<'_, C>,
     mut stream: TcpStream,
     log: Logger,
 ) {
