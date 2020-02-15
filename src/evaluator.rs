@@ -167,6 +167,9 @@ impl<'a, C> Evaluator<'a, C> {
             if *front == "?" {
                 let mut list = mapping_to_list(&self.mapping);
                 if let Some(regex) = content.get(1) {
+                    if content.len() >= 3 {
+                        return Some(Feedback::Err("Too many arguments to: ?".to_string()));
+                    }
                     match Regex::new(&(".*".to_string() + &regex + ".*")) {
                         Ok(regex) => {
                             let joined = list.join("\n");
@@ -176,10 +179,10 @@ impl<'a, C> Evaluator<'a, C> {
                             }
                         }
                         Err(error) => {
-                            return Some(Feedback::Err(format![
+                            return Some(Feedback::Err(format!(
                                 "Regex could not be compiled: {}",
                                 error
-                            ]));
+                            )));
                         }
                     }
                 }
@@ -430,5 +433,23 @@ mod tests {
             eval.interpret_single(&call).unwrap()
         );
         assert_eq!(0, eval.get_current_depth());
+    }
+
+    #[test]
+    fn question_only_handles_one() {
+        let mut eval = Evaluator::new(());
+        assert_eq!("", eval.interpret_single("? _").unwrap().unwrap());
+        assert_eq!(
+            "Too many arguments to: ?",
+            eval.interpret_single("? _ _").unwrap().unwrap_err()
+        );
+        assert_eq!(
+            "Too many arguments to: ?",
+            eval.interpret_single("? _ _ _ _ _").unwrap().unwrap_err()
+        );
+        assert_eq!(
+            "Too many arguments to: ?",
+            eval.interpret_multiple("? _ _ _ _ _").unwrap().unwrap_err()
+        );
     }
 }

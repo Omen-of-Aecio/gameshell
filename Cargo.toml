@@ -1,6 +1,6 @@
 [package]
 name = "gameshell"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 description = "Simple lisp/bash-like shell to integrate into programs"
 keywords = ["language", "interpreter", "lisp", "bash"]
