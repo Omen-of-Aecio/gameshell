@@ -31,27 +31,27 @@ impl<'a, C> Evaluator<'a, C> {
         }
     }
 
-    /// Set the recursion limit of nested calls
+    /// Set the recursion limit of nested calls.
     pub fn set_recursion_limit(&mut self, limit: usize) {
         self.max_depth = limit;
     }
 
-    /// Get a reference to this machine's context
+    /// Get a reference to this machine's context.
     pub fn context(&self) -> &C {
         &self.context
     }
 
-    /// Get a mutable reference to this machine's context
+    /// Get a mutable reference to this machine's context.
     pub fn context_mut(&mut self) -> &mut C {
         &mut self.context
     }
 
-    /// Register a handler function for a command
+    /// Register a handler function for a command.
     pub fn register(&mut self, spec: Spec<'_, 'a, Type, String, C>) -> Result<(), RegError> {
         self.mapping.register(spec)
     }
 
-    /// Register an array of handler functions for a command, see [Evaluator::register]
+    /// Register an array of handler functions for a command, see [Evaluator::register].
     pub fn register_many(
         &mut self,
         spec: &[Spec<'_, 'a, Type, String, C>],

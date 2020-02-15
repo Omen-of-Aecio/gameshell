@@ -20,7 +20,7 @@ pub enum Consumption {
     Stop,
 }
 
-/// Indication of the validity of the current accumulation buffer
+/// Indication of the validity of the current accumulation buffer.
 #[derive(Debug)]
 pub enum Validation {
     /// Returning this value causes `process` to run with the accumulated buffer. The buffer is
@@ -34,7 +34,7 @@ pub enum Validation {
     Stop,
 }
 
-/// Indicate whether to continue or stop the system
+/// Indicate whether to continue or stop the system.
 #[derive(Debug)]
 pub enum Process {
     /// Continue processing bytes

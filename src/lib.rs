@@ -149,7 +149,7 @@ pub struct GameShell<'a, C, R: Read, W: Write> {
 }
 
 impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
-    /// Spawn a new gameshell with a given context and readers/writers
+    /// Spawn a new gameshell with a given context and readers/writers.
     pub fn new(context: C, reader: R, writer: W) -> Self {
         Self {
             evaluator: Evaluator::new(context),
@@ -159,27 +159,27 @@ impl<'a, C, R: Read, W: Write> GameShell<'a, C, R, W> {
         }
     }
 
-    /// Get a reference to the current evaluator
+    /// Get a reference to the current evaluator.
     pub fn evaluator(&mut self) -> &mut Evaluator<'a, C> {
         &mut self.evaluator
     }
 
-    /// Get a reference to the current context
+    /// Get a reference to the current context.
     pub fn context(&self) -> &C {
         self.evaluator.context()
     }
 
-    /// Get a mutable reference to the current context
+    /// Get a mutable reference to the current context.
     pub fn context_mut(&mut self) -> &mut C {
         self.evaluator.context_mut()
     }
 
-    /// Register a command specificator to this gameshell instance
+    /// Register a command specificator to this gameshell instance.
     pub fn register(&mut self, spec: Spec<'_, 'a, Type, String, C>) -> Result<(), RegError> {
         self.evaluator.register(spec)
     }
 
-    /// Register multiple command specifications to this gameshell instance
+    /// Register multiple command specifications to this gameshell instance.
     pub fn register_many(
         &mut self,
         spec: &[Spec<'_, 'a, Type, String, C>],
