@@ -250,10 +250,10 @@ mod tests {
         }
 
         eval.register((&[("call", None)], handler)).unwrap();
-        assert_eq![
+        assert_eq!(
             Feedback::Ok("".into()),
             eval.interpret_single("call").unwrap()
-        ];
+        );
     }
 
     #[test]
@@ -273,10 +273,10 @@ mod tests {
             handler,
         ))
         .unwrap();
-        assert_eq![
+        assert_eq!(
             Feedback::Ok("call <f32> abc <i32> ...\ncall <f32> something \nlog context <i32> ... level <atom>".into()),
             eval.interpret_single("?").unwrap()
-        ];
+        );
     }
 
     #[test]
@@ -296,18 +296,18 @@ mod tests {
             handler,
         ))
         .unwrap();
-        assert_eq![
+        assert_eq!(
             Feedback::Ok("call <f32> abc <i32> ...\ncall <f32> something ".into()),
             eval.interpret_single("? call").unwrap()
-        ];
-        assert_eq![
+        );
+        assert_eq!(
             Feedback::Ok("call <f32> abc <i32> ...".into()),
             eval.interpret_single("? abc").unwrap()
-        ];
-        assert_eq![
+        );
+        assert_eq!(
             Feedback::Err("Regex could not be compiled: regex parse error:\n    .*\\x.*\n        ^\nerror: invalid hexadecimal digit".into()),
             eval.interpret_single("? \\x").unwrap()
-        ];
+        );
     }
 
     #[test]
@@ -319,24 +319,24 @@ mod tests {
         }
 
         eval.register((&[("call", ANY_F32)], handler)).unwrap();
-        assert_eq![
+        assert_eq!(
             Feedback::Err(
                 "Expected <f32>. Decider: Too few elements: [], length: 0, expected: 1".into()
             ),
             eval.interpret_single("call").unwrap()
-        ];
-        assert_eq![
+        );
+        assert_eq!(
             Feedback::Ok("".into()),
             eval.interpret_single("call 3.14159").unwrap()
-        ];
-        assert_eq![
+        );
+        assert_eq!(
             Feedback::Ok("".into()),
             eval.interpret_single("call 3").unwrap()
-        ];
-        assert_eq![
+        );
+        assert_eq!(
             Feedback::Err("Expected <f32>. Decider: got string: alpha".into()),
             eval.interpret_single("call alpha").unwrap()
-        ];
+        );
     }
 
     #[test]
@@ -348,7 +348,7 @@ mod tests {
         fn handler(context: &mut Sender<f32>, args: &[Type]) -> Result<String, String> {
             match args[0] {
                 Type::F32(number) => context.send(number).unwrap(),
-                _ => panic!["Input was not an f32"],
+                _ => panic!("Input was not an f32"),
             }
             Ok("".into())
         }
@@ -357,7 +357,7 @@ mod tests {
 
         eval.interpret_single("call 3.14159").unwrap().unwrap();
 
-        assert_eq![3.14159, rx.recv().unwrap()]
+        assert_eq!(3.14159, rx.recv().unwrap());
     }
 
     #[test]
@@ -369,7 +369,7 @@ mod tests {
         fn handler(context: &mut Sender<Vec<u8>>, args: &[Type]) -> Result<String, String> {
             match args[0] {
                 Type::Raw(ref bytes) => context.send(bytes.clone()).unwrap(),
-                _ => panic!["Input not raw bytes"],
+                _ => panic!("Input not raw bytes"),
             }
             Ok("".into())
         }
@@ -380,7 +380,7 @@ mod tests {
 
         // PNG magic number
         static PNG_MAGIC_NUMBER: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-        assert_eq![PNG_MAGIC_NUMBER, &rx.recv().unwrap()[..]]
+        assert_eq!(PNG_MAGIC_NUMBER, &rx.recv().unwrap()[..]);
     }
 
     #[test]
@@ -394,15 +394,15 @@ mod tests {
 
         eval.register((&[("call", ANY_STRING)], handler)).unwrap();
         eval.interpret_single("call(call _)").unwrap().unwrap();
-        assert_eq![2, *eval.context()];
+        assert_eq!(2, *eval.context());
         eval.interpret_single("call(call(call _))")
             .unwrap()
             .unwrap();
-        assert_eq![2 + 3, *eval.context()];
+        assert_eq!(2 + 3, *eval.context());
         eval.interpret_multiple("call(call(call _))")
             .unwrap()
             .unwrap();
-        assert_eq![2 + 3 + 3, *eval.context()];
+        assert_eq!(2 + 3 + 3, *eval.context());
     }
 
     #[test]
@@ -425,10 +425,10 @@ mod tests {
             call += ")";
         }
 
-        assert_eq![
+        assert_eq!(
             Err("Recursion limit reached: 100".into()),
             eval.interpret_single(&call).unwrap()
-        ];
-        assert_eq![0, eval.get_current_depth()];
+        );
+        assert_eq!(0, eval.get_current_depth());
     }
 }

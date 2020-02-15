@@ -53,7 +53,7 @@
 //!     // error message to the writer.
 //!     fn handler(context: &mut u8, args: &[Type]) -> Result<String, String> {
 //!         *context += 1;
-//!         println!["Got types: {:?}", args[0]];
+//!         println!("Got types: {:?}", args[0]);
 //!         Ok("Hello world!".into())
 //!     }
 //!
@@ -72,9 +72,9 @@
 //!     eval.run(buffer);
 //!
 //!     // Ensure that we have run at least once, our starting context was 0, which should now be 1
-//!     assert_eq![1, *eval.context()];
+//!     assert_eq!(1, *eval.context());
 //!     // Our Ok message has been written to the writer
-//!     assert_eq!["Hello world!", from_utf8(&write[..]).unwrap()];
+//!     assert_eq!("Hello world!", from_utf8(&write[..]).unwrap());
 //! }
 //! ```
 //!
@@ -262,7 +262,7 @@ mod tests {
         let mut write = [0u8; 10];
         let mut shell = GameShell::new(0u8, &read[..], &mut write[..]);
 
-        assert_eq![&mut 0u8, shell.context_mut()];
+        assert_eq!(&mut 0u8, shell.context_mut());
     }
 
     #[test]
@@ -282,7 +282,7 @@ mod tests {
         let buffer = &mut [0u8; 1024];
         eval.run(buffer);
 
-        assert_eq![1, *eval.context()];
+        assert_eq!(1, *eval.context());
     }
 
     #[test]
@@ -302,11 +302,11 @@ mod tests {
         let buffer = &mut [0u8; 10];
         eval.run(buffer);
 
-        assert_eq![2, *eval.context()];
-        assert_eq![
+        assert_eq!(2, *eval.context());
+        assert_eq!(
             "Input too big for buffer, terminating instance",
             from_utf8(&write[4..50]).unwrap()
-        ];
+        );
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
         fn handler(context: &mut f32, args: &[Type]) -> Result<String, String> {
             match args[0] {
                 Type::F32(number) => *context += number,
-                _ => panic![],
+                _ => panic!(),
             }
             Ok("".into())
         }
@@ -330,6 +330,6 @@ mod tests {
         let buffer = &mut [0u8; 12];
         eval.run(buffer);
 
-        assert_eq![4.3, *eval.context()];
+        assert_eq!(4.3, *eval.context());
     }
 }

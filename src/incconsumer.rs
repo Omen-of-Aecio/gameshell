@@ -130,9 +130,9 @@ mod tests {
         let buffer = &mut [0u8; 0];
         consumed.run(buffer);
 
-        assert_eq![1, consumed.consumption_count];
-        assert_eq![0, consumed.validation_count];
-        assert_eq![0, consumed.process_count];
+        assert_eq!(1, consumed.consumption_count);
+        assert_eq!(0, consumed.validation_count);
+        assert_eq!(0, consumed.process_count);
     }
 
     #[test]
@@ -163,9 +163,9 @@ mod tests {
         let buffer = &mut [0u8; 1];
         consumed.run(buffer);
 
-        assert_eq![1, consumed.consumption_count];
-        assert_eq![1, consumed.validation_count];
-        assert_eq![0, consumed.process_count];
+        assert_eq!(1, consumed.consumption_count);
+        assert_eq!(1, consumed.validation_count);
+        assert_eq!(0, consumed.process_count);
     }
 
     #[quickcheck_macros::quickcheck]
@@ -193,7 +193,7 @@ mod tests {
                 }
             }
             fn process(&mut self, input: &[u8]) -> Process {
-                assert_eq![self.bytes, input.len()];
+                assert_eq!(self.bytes, input.len());
                 Process::Stop
             }
         }

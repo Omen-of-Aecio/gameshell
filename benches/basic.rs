@@ -31,7 +31,7 @@ fn initialize_gameshell() {
     let buffer = &mut [0u8; 1024];
     eval.run(buffer);
 
-    assert_eq![1, *eval.context()];
+    assert_eq!(1, *eval.context());
 }
 
 fn initialize(c: &mut Criterion) {

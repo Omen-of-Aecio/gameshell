@@ -50,17 +50,17 @@
 //!
 //! fn handler(_: &mut (), args: &[Type]) -> Result<String, String> {
 //!     if let [Type::I32(number)] = args {
-//!         println!["The number {} is definitely greater than 123", number];
+//!         println!("The number {} is definitely greater than 123", number);
 //!         Ok("We can return whatever we want to here".into())
 //!     } else {
-//!         panic!["Wrong arguments"];
+//!         panic!("Wrong arguments");
 //!     }
 //! }
 //!
 //! let mut eval = Evaluator::new(());
 //! eval.register((&[("my-command", I32_NUMBER_ABOVE_123)], handler));
 //! eval.interpret_single("my-command 124").unwrap().unwrap();
-//! assert_eq![Err("Expected <i32-over-123>. Decider: Number is not >123".into()), eval.interpret_single("my-command -9").unwrap()];
+//! assert_eq!(Err("Expected <i32-over-123>. Decider: Number is not >123".into()), eval.interpret_single("my-command -9").unwrap());
 //! ```
 use crate::types::Type;
 use cmdmat::{Decider, Decision, SVec};
