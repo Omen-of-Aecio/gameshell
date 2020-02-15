@@ -124,10 +124,15 @@ use std::{
     str::from_utf8,
 };
 
+#[cfg(feature = "with-tokio")]
+mod applicator;
 pub mod evaluator;
 mod incconsumer;
 pub mod predicates;
 pub mod types;
+
+#[cfg(feature = "with-tokio")]
+pub use applicator::tokio_apply;
 
 /// Feedback provided by the interpreter. All results are either a success string or an error
 /// string.
