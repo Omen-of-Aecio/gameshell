@@ -1,4 +1,4 @@
-//! GameShell - A fast and lightweight shell for interactive work in Rust
+//! GameShell - A fast and lightweight shell for interactive work in Rust.
 //!
 //! GameShell is a little lisp-like command shell made to be embedded in rust programs. It has no
 //! runtime and attempts to call given handlers as fast as possible. This means that GameShell is
@@ -100,7 +100,9 @@
 //! ```
 //! Autocomplete a query.
 //!
-//! These commands return strings that contain useful information to be displayed to the user.
+//! These commands return strings that contain useful information to be displayed to the user. If
+//! you do not wish to expose these commands then you overwrite these commands using a command
+//! handler.
 #![deny(
     missing_docs,
     trivial_casts,
@@ -134,6 +136,7 @@ pub use applicator::tokio_apply;
 
 /// Feedback provided by the interpreter. All results are either a success string or an error
 /// string.
+/// Errors will abort any nested expressions and return the error immediately.
 pub type Feedback = Result<String, String>;
 
 /// The main virtual machine wrapper for a game shell

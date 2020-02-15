@@ -1,4 +1,4 @@
-//! Core virtual machine used by [GameShell]
+//! Core virtual machine.
 use crate::{types::Type, Feedback};
 use cmdmat::{self, Either, LookError, Mapping, RegError, Spec};
 use metac::{Data, Evaluate, ParseError};
@@ -207,10 +207,6 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
         };
         let content_ref = content.iter().map(|s| &s[..]).collect::<Vec<_>>();
 
-        if let Some(result) = self.handle_any_builtin_commands(&content_ref[..]) {
-            return result;
-        }
-
         let res = self.mapping.lookup(&content_ref[..]);
         match res {
             Ok(fin) => {
@@ -220,7 +216,12 @@ impl<'a, C> Evaluate<Feedback> for Evaluator<'a, C> {
                     Err(res) => Feedback::Err(res),
                 }
             }
-            Err(err) => lookerr_to_evalres(err),
+            Err(err) => {
+                if let Some(result) = self.handle_any_builtin_commands(&content_ref[..]) {
+                    return result;
+                }
+                lookerr_to_evalres(err)
+            }
         }
     }
 }
@@ -450,6 +451,41 @@ mod tests {
         assert_eq!(
             "Too many arguments to: ?",
             eval.interpret_multiple("? _ _ _ _ _").unwrap().unwrap_err()
+        );
+    }
+
+    #[test]
+    fn override_builtins() {
+        let mut eval = Evaluator::new(());
+
+        assert_eq!(
+            Ok("".into()),
+            eval.interpret_single("?").unwrap()
+        );
+
+        fn handler(_: &mut (), _: &[Type]) -> Result<String, String> {
+            Err("? is not available".into())
+        }
+        eval.register((&[("?", None)], handler)).unwrap();
+
+        assert_eq!(
+            Err("? is not available".into()),
+            eval.interpret_single("?").unwrap()
+        );
+
+        assert_eq!(
+            Ok("? (final)".into()),
+            eval.interpret_single("autocomplete").unwrap()
+        );
+
+        fn autocomplete_handler(_: &mut (), _: &[Type]) -> Result<String, String> {
+            Err("autocomplete is not available".into())
+        }
+        eval.register((&[("autocomplete", None)], autocomplete_handler)).unwrap();
+
+        assert_eq!(
+            Err("autocomplete is not available".into()),
+            eval.interpret_single("autocomplete").unwrap()
         );
     }
 }
