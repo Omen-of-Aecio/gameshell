@@ -1,6 +1,6 @@
 [package]
 name = "gameshell"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Kevin Robert Stravers <macocio@gmail.com>"]
 description = "Simple lisp/bash-like shell to integrate into programs"
 keywords = ["language", "interpreter", "lisp", "bash"]
@@ -11,7 +11,7 @@ license = "LGPL-3.0-or-later"
 
 [dependencies]
 base64 = "0.11.0"
-cmdmat = "0.1.2"
+cmdmat = "0.1.4"
 metac = "0.1.1"
 quickcheck = { version = "0.9.2", optional = true }
 quickcheck_macros = { version = "0.9.1", optional = true }
